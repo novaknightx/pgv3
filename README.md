@@ -83,7 +83,7 @@ http://localhost:8080
 Once hosted on GitHub Pages:
 
 ```
-https://novaknightx.github.io/pgv/
+https://novaknightx.github.io/pgv3/
 ```
 
 ---
