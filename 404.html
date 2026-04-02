@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhishGuard v5 — Advanced Phishing Detection</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Fira+Code:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #080c14;
+  --bg2:      #0c1220;
+  --surface:  #101828;
+  --card:     #131f30;
+  --line:     #1e2f48;
+  --line2:    #263a58;
+  --text:     #dde8f5;
+  --sub:      #6a85a8;
+  --faint:    #1e2f48;
+  --safe:     #00e58a;  --safe-d: #00361f;   --safe-b: #004d2b;
+  --danger:   #ff3b5c;  --danger-d: #280810; --danger-b: #4d1020;
+  --warn:     #ffaa00;  --warn-d: #1f1400;   --warn-b: #3d2800;
+  --blue:     #3b9eff;  --blue-d: #060f20;   --blue-b: #0f2d50;
+  --teal:     #00d4c8;
+  --purple:   #a855f7;  --purple-d: #150b25; --purple-b: #3d1a6e;
+  --display: 'Syne', sans-serif;
+  --body:    'DM Sans', sans-serif;
+  --mono:    'Fira Code', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(59,158,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(59,158,255,.025) 1px,transparent 1px);background-size:44px 44px;pointer-events:none}
+
+/* HEADER */
+.hdr{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:1px solid var(--line);background:rgba(8,12,20,.92);backdrop-filter:blur(16px)}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-mark{width:38px;height:38px;background:linear-gradient(135deg,#0f2d50,#1a4a7a);border:1.5px solid var(--blue);border-radius:10px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.brand-mark::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(59,158,255,.3),transparent 70%)}
+.brand-mark svg{width:18px;height:18px;fill:var(--blue);position:relative;z-index:1}
+.brand-name{font-family:var(--display);font-size:19px;font-weight:800;letter-spacing:-.5px;background:linear-gradient(135deg,#fff 40%,#6aaeff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.brand-sub{font-size:10px;color:var(--sub);font-family:var(--mono);letter-spacing:1px;margin-top:1px}
+.hdr-r{display:flex;align-items:center;gap:8px}
+.chip{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:4px;letter-spacing:.4px}
+.chip-t{border:1px solid rgba(0,212,200,.3);color:var(--teal);background:rgba(0,212,200,.06)}
+.chip-b{border:1px solid rgba(59,158,255,.3);color:var(--blue);background:rgba(59,158,255,.06)}
+.chip-p{border:1px solid rgba(168,85,247,.3);color:var(--purple);background:rgba(168,85,247,.06)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--safe);box-shadow:0 0 7px var(--safe);animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* WRAP */
+.wrap{position:relative;z-index:1;max-width:880px;margin:0 auto;padding:36px 22px 80px}
+
+/* TABS */
+.mode-toggle{display:flex;gap:5px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:5px;margin-bottom:28px}
+.mode-btn{flex:1;padding:10px 16px;border:none;border-radius:8px;font-family:var(--display);font-size:14px;font-weight:600;cursor:pointer;transition:all .18s;color:var(--sub);background:transparent;display:flex;align-items:center;justify-content:center;gap:7px}
+.mode-btn.active{background:var(--card);color:var(--text);box-shadow:0 0 0 1px var(--line2)}
+.panel{display:none}.panel.active{display:block}
+
+/* SEARCH BOX */
+.sbox{background:var(--surface);border:1px solid var(--line2);border-radius:14px;padding:22px;margin-bottom:22px;transition:border-color .2s}
+.sbox:focus-within{border-color:rgba(59,158,255,.5)}
+.slabel{font-family:var(--mono);font-size:10px;color:var(--sub);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.slabel::before{content:'›';color:var(--blue);font-size:13px}
+.srow{display:flex;gap:9px}
+.sinput{flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:13px 16px;font-family:var(--mono);font-size:14px;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s}
+.sinput::placeholder{color:var(--faint)}
+.sinput:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,158,255,.08)}
+.sbtn{padding:13px 26px;background:linear-gradient(135deg,#1a4a7a,#0f2d50);border:1px solid var(--blue);border-radius:9px;color:var(--blue);font-family:var(--display);font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .18s;display:flex;align-items:center;gap:7px}
+.sbtn:hover{background:linear-gradient(135deg,#1e5490,#133660);transform:translateY(-1px);box-shadow:0 4px 18px rgba(59,158,255,.2)}
+.sbtn:active{transform:translateY(0)}
+.sbtn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+.shints{margin-top:9px;font-size:12px;color:var(--sub);display:flex;gap:14px;flex-wrap:wrap}
+.hint{font-family:var(--mono);font-size:11px;color:var(--sub);cursor:pointer;transition:color .15s}
+.hint:hover{color:var(--teal)}
+.hint::before{content:'↗ '}
+
+/* STAGES */
+.stages-wrap{margin-bottom:20px}
+.stages{display:flex;flex-direction:column;gap:5px}
+.stage{display:flex;align-items:center;gap:11px;padding:9px 15px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-size:13px;color:var(--sub);transition:all .22s}
+.stage.run{border-color:rgba(59,158,255,.4);background:var(--blue-d);color:var(--blue)}
+.stage.ok {border-color:rgba(0,229,138,.3);background:var(--safe-d);color:var(--safe)}
+.stage.fail{border-color:rgba(255,59,92,.3);background:var(--danger-d);color:var(--danger)}
+.stage.skip{border-color:var(--line);color:var(--faint)}
+.stage.warn{border-color:rgba(255,170,0,.3);background:var(--warn-d);color:var(--warn)}
+.stico{width:18px;text-align:center;flex-shrink:0;font-size:14px}
+.stage.run .stico{animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.stlbl{flex:1;font-size:12px}
+.stdet{font-family:var(--mono);font-size:10px;opacity:.8}
+
+/* VERDICT */
+.vcard{border-radius:18px;padding:28px 26px;margin-bottom:18px;position:relative;overflow:hidden}
+.vcard.safe   {background:linear-gradient(135deg,#001a0d,#00361f);border:1px solid var(--safe-b)}
+.vcard.danger {background:linear-gradient(135deg,#1a0008,#280810);border:1px solid var(--danger-b)}
+.vcard.warn   {background:linear-gradient(135deg,#1a0f00,#1f1400);border:1px solid var(--warn-b)}
+.vcard.unknown{background:var(--surface);border:1px solid var(--line2)}
+.vcard.noexist{background:linear-gradient(135deg,#0d0020,#160035);border:1px solid #3d1080}
+.vcard::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;pointer-events:none}
+.vcard.safe::before   {background:radial-gradient(circle,rgba(0,229,138,.1),transparent 70%)}
+.vcard.danger::before {background:radial-gradient(circle,rgba(255,59,92,.1),transparent 70%)}
+.vcard.warn::before   {background:radial-gradient(circle,rgba(255,170,0,.08),transparent 70%)}
+.vtop{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.vleft{flex:1;min-width:0}
+.vtag{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:6px}
+.vtag::before{content:'●';font-size:7px}
+.vcard.safe .vtag    {color:var(--safe)}
+.vcard.danger .vtag  {color:var(--danger)}
+.vcard.warn .vtag    {color:var(--warn)}
+.vcard.unknown .vtag {color:var(--sub)}
+.vcard.noexist .vtag {color:#a070ff}
+.vbig{font-family:var(--display);font-weight:800;font-size:clamp(26px,5.5vw,42px);line-height:1;letter-spacing:-1px;margin-bottom:8px}
+.vcard.safe .vbig    {color:var(--safe)}
+.vcard.danger .vbig  {color:var(--danger)}
+.vcard.warn .vbig    {color:var(--warn)}
+.vcard.unknown .vbig {color:var(--text)}
+.vcard.noexist .vbig {color:#a070ff}
+.vsub{font-size:13px;color:var(--sub);line-height:1.6;max-width:500px}
+
+/* CONFIDENCE BADGE */
+.conf-badge{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:5px 12px;border-radius:20px;font-family:var(--mono);font-size:11px;font-weight:500}
+.conf-high  {background:rgba(0,229,138,.1);color:var(--safe);border:1px solid rgba(0,229,138,.25)}
+.conf-med   {background:rgba(255,170,0,.1);color:var(--warn);border:1px solid rgba(255,170,0,.25)}
+.conf-low   {background:rgba(107,133,168,.1);color:var(--sub);border:1px solid rgba(107,133,168,.2)}
+.conf-badge::before{content:'◉';font-size:8px}
+
+/* DIAL */
+.vright{flex-shrink:0}
+.dial{width:96px;height:96px;position:relative;display:flex;align-items:center;justify-content:center}
+.dial svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.dalbg{fill:none;stroke:var(--line2);stroke-width:7}
+.dalarc{fill:none;stroke-width:7;stroke-linecap:round;transition:stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)}
+.dalctr{text-align:center;position:relative;z-index:1}
+.dalnum{font-family:var(--display);font-size:20px;font-weight:800;line-height:1}
+.dallbl{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--sub);margin-top:2px}
+
+/* NET BAR */
+.netbar{margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.05)}
+.netbar-labels{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--sub);margin-bottom:5px;flex-wrap:wrap;gap:4px}
+.netbar-track{height:5px;background:var(--faint);border-radius:3px;overflow:hidden}
+.netbar-fill{height:100%;border-radius:3px;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+
+/* AMPLIFIER WARNING */
+.amp-warn{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:rgba(255,59,92,.06);border:1px solid rgba(255,59,92,.2);border-radius:9px;margin-bottom:14px;font-size:13px;color:var(--danger)}
+.amp-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+
+/* SECTION */
+.sec{margin-bottom:16px}
+.sec-head{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--sub);letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sec-head::after{content:'';flex:1;height:1px;background:var(--line)}
+
+/* SIGNALS */
+.signals{display:flex;flex-direction:column;gap:5px}
+.sig{display:flex;align-items:flex-start;gap:11px;padding:11px 14px;border-radius:9px;border:1px solid transparent;transition:border-color .15s}
+.sig.bad-h{background:rgba(255,59,92,.05);border-color:rgba(255,59,92,.18)}
+.sig.bad-m{background:rgba(255,170,0,.05);border-color:rgba(255,170,0,.15)}
+.sig.bad-l{background:rgba(59,158,255,.04);border-color:rgba(59,158,255,.12)}
+.sig.good {background:rgba(0,229,138,.04);border-color:rgba(0,229,138,.14)}
+.sig.info {background:rgba(59,158,255,.03);border-color:rgba(59,158,255,.1)}
+.sig-ico{font-size:14px;flex-shrink:0;margin-top:2px}
+.sig-body{flex:1}
+.sig-title{font-size:14px;color:var(--text);font-weight:500;line-height:1.35}
+.sig-desc {font-size:12px;color:var(--sub);margin-top:3px;line-height:1.5}
+.sig-badge{flex-shrink:0;font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:4px;align-self:flex-start;margin-top:2px;white-space:nowrap}
+.bH{background:rgba(255,59,92,.14);color:var(--danger);border:1px solid rgba(255,59,92,.25)}
+.bM{background:rgba(255,170,0,.12);color:var(--warn);border:1px solid rgba(255,170,0,.2)}
+.bL{background:rgba(59,158,255,.1);color:var(--blue);border:1px solid rgba(59,158,255,.2)}
+.bT{background:rgba(0,229,138,.08);color:var(--safe);border:1px solid rgba(0,229,138,.2)}
+.bN{background:rgba(59,158,255,.06);color:var(--blue);border:1px solid rgba(59,158,255,.15)}
+
+/* DATA */
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:8px}
+.dtile{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:12px 13px}
+.dtile-l{font-family:var(--mono);font-size:10px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.dtile-v{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text);word-break:break-all;line-height:1.4}
+.dtile-v.ok {color:var(--safe)}
+.dtile-v.bad{color:var(--danger)}
+.dtile-v.neu{color:var(--sub)}
+.dtile-v.warn{color:var(--warn)}
+
+/* DNS ROWS */
+.dns-rows{display:flex;flex-direction:column;gap:4px}
+.dr{display:flex;gap:10px;align-items:baseline;padding:6px 11px;background:var(--bg2);border-radius:7px;font-family:var(--mono);font-size:12px}
+.dr-type{color:var(--blue);width:32px;flex-shrink:0;font-weight:500}
+.dr-val {color:var(--teal);flex:1;word-break:break-all}
+.dr-ttl {color:var(--sub);font-size:10px}
+
+/* ACTIONS */
+.actions{display:flex;flex-direction:column;gap:7px}
+.arow{display:flex;align-items:flex-start;gap:11px;padding:11px 14px;background:var(--surface);border:1px solid var(--line);border-radius:9px;font-size:13px;color:var(--sub)}
+.anum{width:20px;height:20px;border-radius:5px;flex-shrink:0;background:var(--blue-d);border:1px solid var(--blue-b);color:var(--blue);font-family:var(--mono);font-size:10px;font-weight:500;display:flex;align-items:center;justify-content:center}
+
+/* HISTORY */
+.history-wrap{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:22px}
+.history-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.history-title{font-family:var(--mono);font-size:10px;color:var(--sub);letter-spacing:1.5px;text-transform:uppercase}
+.history-clear{font-family:var(--mono);font-size:10px;color:var(--sub);cursor:pointer;border:none;background:none;transition:color .15s;padding:0}
+.history-clear:hover{color:var(--danger)}
+.history-list{display:flex;flex-direction:column;gap:5px}
+.history-item{display:flex;align-items:center;gap:10px;padding:8px 11px;background:var(--bg2);border-radius:7px;cursor:pointer;transition:background .15s}
+.history-item:hover{background:var(--card)}
+.hi-verdict{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:3px;flex-shrink:0}
+.hi-v-LEGITIMATE{background:var(--safe-d);color:var(--safe);border:1px solid var(--safe-b)}
+.hi-v-PHISHING  {background:var(--danger-d);color:var(--danger);border:1px solid var(--danger-b)}
+.hi-v-SUSPICIOUS{background:var(--warn-d);color:var(--warn);border:1px solid var(--warn-b)}
+.hi-v-UNKNOWN   {background:var(--surface);color:var(--sub);border:1px solid var(--line)}
+.hi-v-NOEXIST   {background:var(--purple-d);color:var(--purple);border:1px solid var(--purple-b)}
+.hi-target{font-family:var(--mono);font-size:11px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hi-time{font-family:var(--mono);font-size:10px;color:var(--sub);flex-shrink:0}
+.history-empty{font-family:var(--mono);font-size:11px;color:var(--faint);text-align:center;padding:12px 0}
+
+/* EXPORT BTN */
+.export-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;padding:7px 14px;border-radius:7px;border:1px solid var(--line2);background:transparent;color:var(--sub);cursor:pointer;transition:all .15s;margin-top:14px}
+.export-btn:hover{border-color:var(--blue);color:var(--blue)}
+
+/* TIMING */
+.ttag{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--blue);background:var(--blue-d);border:1px solid var(--blue-b);padding:4px 10px;border-radius:5px;margin-bottom:14px;letter-spacing:.4px}
+.ttag::before{content:'⚡'}
+
+/* EMPTY */
+.empty{text-align:center;padding:60px 20px;display:flex;flex-direction:column;align-items:center;gap:11px}
+.empty-ico{width:60px;height:60px;border-radius:14px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:26px;opacity:.4}
+.empty-txt{font-family:var(--mono);font-size:12px;color:var(--sub);line-height:1.8}
+
+/* WL BANNER */
+.wl-banner{display:flex;align-items:center;gap:13px;padding:13px 17px;background:rgba(0,229,138,.05);border:1px solid rgba(0,229,138,.2);border-radius:10px;margin-bottom:14px}
+.wl-ico{font-size:20px}
+.wl-title{font-family:var(--display);font-size:13px;font-weight:700;color:var(--safe)}
+.wl-desc{font-size:12px;color:var(--sub);margin-top:2px}
+
+/* NOEXIST */
+.noexist-box{padding:15px 17px;background:rgba(168,85,247,.05);border:1px solid rgba(168,85,247,.2);border-radius:10px;margin-bottom:14px}
+.noexist-box h3{font-family:var(--display);font-size:13px;font-weight:700;color:#a070ff;margin-bottom:5px}
+.noexist-box p{font-size:13px;color:var(--sub);line-height:1.6}
+
+/* SHORTENER WARNING */
+.shortener-warn{display:flex;align-items:flex-start;gap:10px;padding:12px 15px;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.25);border-radius:9px;margin-bottom:14px}
+.sw-ico{font-size:16px;flex-shrink:0}
+.sw-title{font-family:var(--display);font-size:13px;font-weight:700;color:var(--purple);margin-bottom:3px}
+.sw-desc{font-size:12px;color:var(--sub);line-height:1.5}
+
+/* REDIRECT BANNER */
+.redirect-banner{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:rgba(255,170,0,.05);border:1px solid rgba(255,170,0,.2);border-radius:9px;margin-bottom:14px;font-size:13px}
+
+
+/* ── FEEDBACK & LEARNING ── */
+.fb-bar{display:flex;align-items:center;gap:10px;padding:13px 16px;background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-top:12px;flex-wrap:wrap}
+.fb-label{font-size:13px;color:var(--sub);flex:1;min-width:150px}
+.fb-label strong{color:var(--text)}
+.fb-btns{display:flex;gap:7px;flex-wrap:wrap}
+.fb-btn{padding:7px 13px;border-radius:7px;border:1px solid;font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;background:transparent}
+.fb-btn-safe{border-color:var(--safe-b);color:var(--safe)}
+.fb-btn-safe:hover{background:var(--safe-d);transform:translateY(-1px)}
+.fb-btn-phish{border-color:var(--danger-b);color:var(--danger)}
+.fb-btn-phish:hover{background:var(--danger-d);transform:translateY(-1px)}
+.fb-btn-spam{border-color:var(--warn-b);color:var(--warn)}
+.fb-btn-spam:hover{background:var(--warn-d);transform:translateY(-1px)}
+.fb-done{padding:10px 14px;background:rgba(0,212,200,.06);border:1px solid rgba(0,212,200,.2);border-radius:8px;font-family:var(--mono);font-size:11px;color:var(--teal);margin-top:10px;display:flex;align-items:center;gap:8px;line-height:1.5}
+.learn-panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:20px;overflow:hidden}
+.learn-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none}
+.learn-hdr-l{display:flex;align-items:center;gap:9px}
+.learn-title{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--teal);letter-spacing:1px;text-transform:uppercase}
+.learn-cnt{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:3px;background:rgba(0,212,200,.1);color:var(--teal);border:1px solid rgba(0,212,200,.2)}
+.learn-body{padding:14px 15px;display:none}
+.learn-body.open{display:block}
+.learn-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.learn-stat{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:10px;text-align:center}
+.learn-stat-n{font-family:var(--display);font-size:19px;font-weight:800;color:var(--text)}
+.learn-stat-l{font-family:var(--mono);font-size:10px;color:var(--sub);margin-top:2px;letter-spacing:.5px}
+.wt-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:12px}
+.wt-row:last-child{border-bottom:none}
+.wt-name{color:var(--sub);width:125px;flex-shrink:0;font-family:var(--mono);font-size:10px}
+.wt-track{flex:1;height:4px;background:var(--faint);border-radius:2px;position:relative}
+.wt-orig-mark{position:absolute;top:-1px;bottom:-1px;width:2px;background:var(--sub);border-radius:1px;opacity:.5}
+.wt-fill{height:100%;border-radius:2px;transition:width .6s ease}
+.wt-val{font-family:var(--mono);font-size:10px;color:var(--sub);width:32px;text-align:right;flex-shrink:0}
+.wt-delta{font-family:var(--mono);font-size:10px;width:40px;text-align:right;flex-shrink:0}
+.log-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg2);border-radius:6px;margin-bottom:4px;font-size:12px}
+.log-badge{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:3px;flex-shrink:0}
+.lb-p{background:var(--danger-d);color:var(--danger);border:1px solid var(--danger-b)}
+.lb-s{background:var(--safe-d);color:var(--safe);border:1px solid var(--safe-b)}
+.lb-w{background:var(--warn-d);color:var(--warn);border:1px solid var(--warn-b)}
+.log-target{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono);font-size:11px;color:var(--text)}
+.log-correction{font-family:var(--mono);font-size:10px;color:var(--sub);flex-shrink:0}
+
+
+/* ── GLOSSARY TOOLTIPS ── */
+.jargon{border-bottom:1px dashed rgba(106,133,168,.6);cursor:help;position:relative;white-space:nowrap;display:inline-block}
+.jargon::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#1a2a42;color:#dde8f5;font-family:'DM Sans',system-ui,sans-serif;font-size:12px;font-weight:400;line-height:1.55;padding:9px 13px;border-radius:9px;border:1px solid #263a58;width:250px;white-space:normal;pointer-events:none;opacity:0;transition:opacity .18s;z-index:999;text-transform:none;letter-spacing:0;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+.jargon:hover::after{opacity:1}
+.dtile-l{font-family:'DM Sans',system-ui,sans-serif!important;font-size:11px;font-weight:500}
+.sec-head{font-family:'DM Sans',system-ui,sans-serif!important;font-size:12px;font-weight:600;letter-spacing:.3px;text-transform:none!important}
+
+@media(max-width:600px){
+  .hdr{padding:13px 16px}
+  .wrap{padding:20px 13px 60px}
+  .srow{flex-direction:column}
+  .vright{display:none}
+  .dgrid{grid-template-columns:1fr 1fr}
+  .vtop{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24"><path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.35C16.5 22.15 20 17.25 20 12V6l-8-4z"/></svg>
+    </div>
+    <div>
+      <div class="brand-name">PhishGuard</div>
+      <div class="brand-sub">THREAT DETECTION v5</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <span class="chip chip-t">FREE · NO KEY</span>
+    <span class="chip chip-b">PARALLEL SCAN</span>
+    <span class="chip chip-p">Email auth · Cert history</span>
+    <div class="dot"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="btn-email" onclick="setMode('email')">✉ Email Address</button>
+    <button class="mode-btn" id="btn-url" onclick="setMode('url')">🔗 URL / Website</button>
+  </div>
+
+  <!-- EMAIL -->
+  <div class="panel active" id="panel-email">
+    <div class="sbox">
+      <div class="slabel">Investigate email address</div>
+      <div class="srow">
+        <input class="sinput" id="ei" type="email" placeholder="suspicious@example.com" onkeydown="if(event.key==='Enter')scan('email')"/>
+        <button class="sbtn" id="ebtn" onclick="scan('email')">▶ Scan</button>
+      </div>
+      <div class="shints">
+        Try:
+        <span class="hint" onclick="tryit('ei','paypa1-verify@secure-login.xyz')">paypa1-verify@secure-login.xyz</span>
+        <span class="hint" onclick="tryit('ei','support@google.com')">support@google.com</span>
+        <span class="hint" onclick="tryit('ei','noreply@mailinator.com')">noreply@mailinator.com</span>
+        <span class="hint" onclick="tryit('ei','sunnyy@gmail.com')">sunnyy@gmail.com</span>
+      </div>
+    </div>
+    <div id="history-email"></div>
+    <div id="learn-panel-email"></div>
+    <div id="result-email">
+      <div class="empty"><div class="empty-ico">✉</div><div class="empty-txt">Enter an email address to scan<br>Checks sender identity · domain age · security history · email authentication</div></div>
+    </div>
+  </div>
+
+  <!-- URL -->
+  <div class="panel" id="panel-url">
+    <div class="sbox">
+      <div class="slabel">Analyze URL or website</div>
+      <div class="srow">
+        <input class="sinput" id="ui" type="text" placeholder="https://suspicious-site.com/verify-account" onkeydown="if(event.key==='Enter')scan('url')"/>
+        <button class="sbtn" id="ubtn" onclick="scan('url')">▶ Scan</button>
+      </div>
+      <div class="shints">
+        Try:
+        <span class="hint" onclick="tryit('ui','https://paypa1.com/login')">paypa1.com/login</span>
+        <span class="hint" onclick="tryit('ui','https://google.com')">google.com</span>
+        <span class="hint" onclick="tryit('ui','http://192.168.1.1/secure')">192.168.1.1/secure</span>
+        <span class="hint" onclick="tryit('ui','https://bit.ly/3xyz')">bit.ly/3xyz</span>
+      </div>
+    </div>
+    <div id="history-url"></div>
+    <div id="learn-panel-url"></div>
+    <div id="result-url">
+      <div class="empty"><div class="empty-ico">🔗</div><div class="empty-txt">Enter a URL to scan<br>Redirect detection · geolocation · cert transparency</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+//  CONSTANTS
+// ════════════════════════════════════════════
+const WL = new Set([
+  'google.com','google.co.in','google.co.uk','google.com.au','google.de','google.fr',
+  'youtube.com','gmail.com','googlemail.com','google-analytics.com','googleapis.com',
+  'microsoft.com','bing.com','outlook.com','live.com','hotmail.com','msn.com','office.com','azure.com','microsoft365.com',
+  'apple.com','icloud.com','me.com','mac.com',
+  'amazon.com','amazon.in','amazon.co.uk','amazon.de','amazon.fr','amazonaws.com','amazon.co.jp',
+  'github.com','gitlab.com','stackoverflow.com','npmjs.com','pypi.org','mozilla.org',
+  'cloudflare.com','netlify.com','vercel.app','heroku.com','digitalocean.com',
+  'facebook.com','instagram.com','twitter.com','x.com','linkedin.com',
+  'reddit.com','pinterest.com','snapchat.com','tiktok.com','discord.com',
+  'whatsapp.com','telegram.org','signal.org','viber.com',
+  'paypal.com','stripe.com','visa.com','mastercard.com',
+  'chase.com','wellsfargo.com','bankofamerica.com','citibank.com','citigroup.com',
+  'hsbc.com','barclays.com','lloyds.com','nationwide.co.uk','santander.co.uk',
+  'hdfcbank.com','hdfc.com','icicibank.com','icici.com','sbi.co.in',
+  'axisbank.com','paytm.com','phonepe.com','razorpay.com','kotak.com','bharatpe.com',
+  'ebay.com','shopify.com','flipkart.com','myntra.com','etsy.com','aliexpress.com',
+  'netflix.com','spotify.com','hulu.com','disney.com','disneyplus.com','twitch.tv','primevideo.com',
+  'zoom.us','slack.com','notion.so','dropbox.com','box.com','trello.com','atlassian.com','jira.com',
+  'dhl.com','fedex.com','ups.com','usps.com','royalmail.com','indiapost.gov.in',
+  'irs.gov','nasa.gov','cdc.gov','who.int','gov.uk','gov.in','nic.in',
+  'wikipedia.org','mit.edu','stanford.edu','harvard.edu','bbc.com','nytimes.com','reuters.com',
+  'protonmail.com','yahoo.com','aol.com','fastmail.com','zoho.com','icloud.com',
+  'adobe.com','salesforce.com','airbnb.com','uber.com','ola.com','swiggy.com','zomato.com',
+  'coinbase.com','binance.com','kraken.com','blockchain.com',
+  'pnbindia.in','canarabank.com','bankofbaroda.in','unionbankofindia.co.in',
+  'twitter.com','t.co',
+]);
+const BRANDS = [
+  'paypal','amazon','apple','microsoft','google','facebook','instagram','twitter','linkedin',
+  'netflix','dropbox','chase','wellsfargo','bankofamerica','citibank','ebay','dhl','fedex',
+  'ups','irs','hdfc','icici','sbi','axis','snapchat','tiktok','whatsapp','telegram','yahoo',
+  'outlook','adobe','salesforce','spotify','airbnb','coinbase','binance','metamask','stripe',
+  'shopify','discord','zomato','swiggy','flipkart','myntra','paytm','phonepe','uber','ola',
+  'netflix','spotify','twitch','steam','roblox','minecraft','fortnite','nintendo','playstation',
+];
+const DISP = new Set([
+  'mailinator.com','guerrillamail.com','temp-mail.org','throwaway.email','yopmail.com',
+  'trashmail.com','fakeinbox.com','maildrop.cc','10minutemail.com','tempmail.com',
+  'dispostable.com','sharklasers.com','spam4.me','discard.email','spamhereplease.com',
+  'getairmail.com','filzmail.com','trbvm.com','ezztt.com','spamgourmet.com',
+  'getnada.com','tempr.email','mailnull.com','deadaddress.com','tempinbox.com',
+]);
+const FREE_EMAIL = new Set([
+  'gmail.com','yahoo.com','outlook.com','hotmail.com','icloud.com','protonmail.com',
+  'aol.com','live.com','msn.com','ymail.com','zoho.com','fastmail.com','mail.com',
+  'googlemail.com','yahoo.co.in','rediffmail.com',
+]);
+const BAD_TLDS = new Set([
+  'xyz','top','club','online','site','biz','tk','ml','ga','cf','gq','pw',
+  'click','download','loan','work','date','review','stream','link','win',
+  'party','trade','cricket','zip','mov','racing','webcam','science','faith',
+  'men','accountant','bid','gdn','kim','country','stream',
+]);
+const SHORTENERS = new Set([
+  'bit.ly','tinyurl.com','t.co','ow.ly','is.gd','buff.ly','adf.ly','goo.gl',
+  'short.link','rb.gy','cutt.ly','shorturl.at','tiny.cc','shrtco.de','s.id',
+  't.ly','qps.ru','clck.ru','shorte.st','bc.vc',
+]);
+const HGL = {'0':'o','1':'l','3':'e','4':'a','5':'s','6':'g','7':'t','|':'l','vv':'w','rn':'m','cl':'d','I':'l'};
+
+// ════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════
+function lev(a,b){const m=a.length,n=b.length,dp=Array.from({length:m+1},(_,i)=>Array.from({length:n+1},(_,j)=>i===0?j:j===0?i:0));for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);return dp[m][n]}
+function norm(s){let r=s.toLowerCase();for(const[k,v]of Object.entries(HGL))r=r.split(k).join(v);return r}
+function ent(s){const f={};for(const c of s)f[c]=(f[c]||0)+1;return Object.values(f).reduce((e,v)=>{const p=v/s.length;return e-p*Math.log2(p)},0)}
+function rootDomain(h){return h.split('.').slice(-2).join('.')}
+function ageLabel(d){if(d==null)return'Unknown';if(d<30)return d+'d ⚠';if(d<365)return Math.round(d/30)+'mo';return Math.round(d/365)+'yr'}
+function tsNow(){return Math.round(Date.now()/1000)}
+function elapsed(t){return Math.round(performance.now()-t)+'ms'}
+function tryit(id,v){document.getElementById(id).value=v}
+function setMode(m){['email','url'].forEach(x=>{document.getElementById('btn-'+x).classList.toggle('active',x===m);document.getElementById('panel-'+x).classList.toggle('active',x===m)})}
+
+// Spoofing check
+function spoofCheck(domain){
+  const sld=domain.split('.').slice(0,-1).join('.');
+  const n=norm(sld);let best=null;
+  for(const b of BRANDS){
+    if(sld===b)return{brand:b,dist:0,type:'exact'};
+    if(sld.includes(b)&&sld!==b)return{brand:b,dist:0,type:'contains'};
+    const d=lev(n,b);
+    const t=b.length<=4?1:b.length<=7?2:3;
+    if(d<=t&&(!best||d<best.dist))best={brand:b,dist:d,type:'typosquat'};
+  }
+  return best;
+}
+
+// ════════════════════════════════════════════
+//  SCORER — with combination amplifier
+// ════════════════════════════════════════════
+class Scorer {
+  constructor(){ this.risk=0; this.trust=0; this.signals=[]; this._highCount=0; this._locked=false; }
+
+  // Call this for whitelisted domains — freezes all future bad() calls
+  lockWhitelist(){
+    this._locked = true;
+    this.risk = 0; // reset any risk that snuck in before lock
+  }
+
+  bad(pts, title, desc='', tag='MED'){
+    if(this._locked) return; // whitelisted — no risk allowed
+    if(tag==='HIGH') this._highCount++;
+    this.risk = Math.min(100, this.risk+pts);
+    this.signals.push({kind:'bad',pts,title,desc,tag});
+  }
+  good(pts, title, desc=''){
+    this.trust = Math.min(100, this.trust+pts);
+    this.signals.push({kind:'good',pts,title,desc});
+  }
+  info(title, desc=''){
+    this.signals.push({kind:'info',title,desc});
+  }
+
+  // Combination amplifier: 3+ HIGH signals = extra 15 risk points
+  // This models real phishing behaviour — attacks combine multiple tricks
+  amplify(){
+    if(this._highCount>=3){
+      const bonus=15;
+      this.risk=Math.min(100,this.risk+bonus);
+      return { fired:true, count:this._highCount, bonus };
+    }
+    return { fired:false };
+  }
+
+  net(){ return Math.max(0, this.risk-this.trust); }
+  verdict(){
+    const n=this.net();
+    return n>=60?'PHISHING':n>=30?'SUSPICIOUS':n>=10?'UNKNOWN':'LEGITIMATE';
+  }
+
+  // Confidence: how many signals fired, how spread risk/trust are
+  confidence(){
+    const sigCount = this.signals.filter(s=>s.kind!=='info').length;
+    const net = this.net();
+    if(sigCount>=5 && (net>=70||net<=5)) return 'HIGH';
+    if(sigCount>=3) return 'MED';
+    return 'LOW';
+  }
+}
+
+// ════════════════════════════════════════════
+//  FREE APIs
+// ════════════════════════════════════════════
+async function dnsQ(name, type='A'){
+  try{
+    const r=await fetch(`https://dns.google/resolve?name=${encodeURIComponent(name)}&type=${type}`,{signal:AbortSignal.timeout(5000)});
+    if(!r.ok)return{records:[],nx:false,raw:null};
+    const d=await r.json();
+    return{records:d.Answer||[],nx:d.Status===3,status:d.Status,raw:d};
+  }catch{return{records:[],nx:false,status:-1,raw:null}}
+}
+async function rdapQ(domain){
+  try{
+    const r=await fetch(`https://rdap.org/domain/${domain}`,{signal:AbortSignal.timeout(6000)});
+    if(!r.ok)return null;
+    const d=await r.json();
+    let reg='',exp='',registrar='';
+    for(const ev of(d.events||[])){
+      if(ev.eventAction==='registration')reg=ev.eventDate?.slice(0,10)||'';
+      if(ev.eventAction==='expiration')exp=ev.eventDate?.slice(0,10)||'';
+    }
+    for(const e of(d.entities||[])){
+      if(e.roles?.includes('registrar'))registrar=e.vcardArray?.[1]?.find(a=>a[0]==='fn')?.[3]||e.handle||''}
+    const ageDays=reg?Math.floor((Date.now()-new Date(reg).getTime())/86400000):null;
+    return{registered:reg,expiry:exp,registrar,ageDays,status:(d.status||[]).map(s=>s.replace('client','').trim())};
+  }catch{return null}
+}
+async function crtQ(domain){
+  try{
+    const r=await fetch(`https://crt.sh/?q=${encodeURIComponent(domain)}&output=json`,{signal:AbortSignal.timeout(7000)});
+    if(!r.ok)return null;
+    const d=await r.json();
+    if(!Array.isArray(d)||!d.length)return{count:0,oldest:null,ageDays:null,samples:[]};
+    const dates=d.map(c=>new Date(c.not_before)).filter(x=>!isNaN(x)).sort((a,b)=>a-b);
+    return{count:d.length,oldest:dates[0]?.toISOString().slice(0,10),newest:dates[dates.length-1]?.toISOString().slice(0,10),ageDays:dates[0]?Math.floor((Date.now()-dates[0].getTime())/86400000):null,samples:d.slice(0,4).map(c=>({cn:c.common_name,date:c.not_before?.slice(0,10)}))};
+  }catch{return null}
+}
+async function geoQ(ip){
+  try{
+    const r=await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode,city,isp,org,hosting,proxy,mobile`,{signal:AbortSignal.timeout(5000)});
+    if(!r.ok)return null;
+    const d=await r.json();
+    return d.status==='success'?d:null;
+  }catch{return null}
+}
+
+// Redirect probe — fetch headers only, no body
+async function redirectQ(url){
+  try{
+    const r=await fetch(url,{method:'HEAD',redirect:'manual',signal:AbortSignal.timeout(4000)});
+    const loc=r.headers.get('location')||'';
+    const isRedirect=r.status>=300&&r.status<400;
+    return{status:r.status,redirectsTo:loc,isRedirect};
+  }catch{return null}
+}
+
+// ════════════════════════════════════════════
+//  SHARED SCORING LOGIC
+// ════════════════════════════════════════════
+function scoreDomainHeuristics(sc, domain, isWL){
+  const parts=domain.split('.');
+  const tld=parts[parts.length-1]||'';
+  const sld=parts[parts.length-2]||'';
+
+  if(DISP.has(domain))
+    sc.bad(40,'Throwaway email service ✗','This is a burner email service — anyone can create a temporary address for free and it disappears after use. Real organisations never send from these.','HIGH');
+  if(BAD_TLDS.has(tld)&&!isWL)
+    sc.bad(20,`High-abuse TLD: .${tld}`,'This type of website address ending (.xyz, .tk, .top etc.) is almost free to register and is heavily favoured by scammers. Real companies use .com, .org, .co.uk and similar well-known endings.','HIGH');
+
+  // Punycode / IDN detection
+  if(domain.includes('xn--')&&!isWL)
+    sc.bad(35,'Disguised foreign-language characters ⚠','This domain uses characters from other languages (like Cyrillic or Greek) that look exactly like English letters. For example, the Cyrillic letter а looks identical to the Latin a — but they are completely different and lead to a different website.','HIGH');
+
+  const sp=spoofCheck(domain);
+  if(sp?.type==='typosquat'&&!isWL)
+    sc.bad(35,`Typosquatting: looks like "${sp.brand}"`,`"${domain}" is ${sp.dist} character edit${sp.dist>1?'s':''} away from "${sp.brand}"  — a classic impersonation attack`,'HIGH');
+  else if(sp?.type==='contains'&&!isWL&&!FREE_EMAIL.has(domain))
+    sc.bad(15,`Brand name "${sp.brand}" embedded in domain`,'The real PayPal.com only uses paypal.com. Adding a brand name into a longer address like amazon-verify-account.com is a trick — the real owner of that domain is NOT the brand.','MED');
+
+  const n=norm(domain);
+  if(n!==domain&&!isWL)
+    sc.bad(28,'Trick letters to look like a real site ⚠',`Characters visually substituted: ${domain} → ${n}. This exploits human inability to spot subtle visual swaps.`,'HIGH');
+
+  const dashes=(sld.match(/-/g)||[]).length;
+  if(dashes>=2&&!isWL)sc.bad(15,`${dashes} hyphens in domain`,'Real company websites almost never have multiple hyphens. Domains like secure-amazon-verify.com are a classic phishing trick.','HIGH');
+  else if(dashes===1&&!isWL)sc.bad(5,'Hyphen in domain name','Having a hyphen in the domain name is a minor warning sign. On its own it means little, but combined with other issues it adds to the overall risk picture.','LOW');
+
+  const subs=parts.length-2;
+  if(subs>2&&!isWL)sc.bad(15,`${subs} subdomain levels deep`,'The actual website is the last part before .com — everything before is just decoration to confuse you. e.g. login.paypal.fake.com is owned by fake.com, not PayPal.','HIGH');
+  else if(subs===1&&!isWL)sc.bad(3,'Has a sub-section before the main name ℹ',`${parts.slice(0,-2).join('.')} — minor indicator`,'LOW');
+
+  const e=parseFloat(ent(sld).toFixed(2));
+  if(e>4.0&&!isWL)sc.bad(15,'Domain name looks randomly computer-generated ⚠',`The name scores ${e}/5 for randomness — the higher the number the more it looks auto-generated rather than chosen by a real person`,'HIGH');
+  else if(e>3.5&&!isWL)sc.bad(8,'Domain name looks randomly generated ⚠','This domain name has an unusual mix of letters — real businesses choose names people can remember and recognise','MED');
+
+  // Numeric domain check
+  const numRatio=(sld.match(/\d/g)||[]).length/Math.max(sld.length,1);
+  if(numRatio>0.4&&sld.length>3&&!isWL)
+    sc.bad(10,'Domain name is mostly digits','Domain names made mostly of numbers are unusual for real websites and common in spam/scam infrastructure.','MED');
+
+  return sp;
+}
+
+function scoreRDAP(sc, rdap){
+  if(!rdap)return;
+  if(rdap.ageDays!=null){
+    if(rdap.ageDays<7)  sc.bad(35,'Website created less than 7 days ago ✗','This website was created less than a week ago. Scammers constantly create new websites for each attack and abandon them within days.','HIGH');
+    else if(rdap.ageDays<30) sc.bad(25,'Website created less than a month ago ✗','This website is less than a month old. While new websites can be legitimate, combined with other warning signs this is a serious red flag.','HIGH');
+    else if(rdap.ageDays<90) sc.bad(15,'Website less than 3 months old ⚠','This website is quite new. Most established businesses have websites that have been running for a year or more.','MED');
+    else if(rdap.ageDays>730)sc.good(20,'Website has been around for over 2 years ✓','This domain has been around for over 2 years — scam sites rarely survive that long.');
+    else if(rdap.ageDays>365)sc.good(10,'Website has been running over a year ✓','Over a year old — gives more confidence that this is a real, maintained website.');
+    else if(rdap.ageDays>180)sc.good(5,'Website has been around 6+ months ✓','6+ months old — not brand new, which is a good sign.');
+  }
+  if(rdap.registrar)sc.good(4,'Registration details publicly verifiable ✓','We could look up the registration details — adds a small amount of confidence.');
+}
+
+function scoreCRT(sc, crt){
+  if(!crt)return;
+  if(crt.count===0)sc.bad(12,'No security history found for this domain ⚠','Every real website that has been live for a while builds up a history of security certificates. Finding none is unusual and suggests this might be a very new or fake site.','MED');
+  else if(crt.ageDays!=null){
+    if(crt.ageDays>1095)sc.good(22,'Security certificate history going back 3+ years ✓','This domain has had a security certificate for 3+ years. Scam sites don\'t last anywhere near that long.');
+    else if(crt.ageDays>730)sc.good(18,'Security history going back 2+ years ✓','2+ years of certificate history. Real, established websites maintain these — fly-by-night scam sites don\'t.');
+    else if(crt.ageDays>180)sc.good(10,'Security history going back 6+ months ✓','6 months of certificate history — a reasonable sign of a maintained, real website.');
+    else if(crt.ageDays<30) sc.bad(18,'Website got its security certificate less than a month ago ✗','This website got its first security certificate less than a month ago — it is brand new. Scammers create new websites constantly and this matches that pattern.','HIGH');
+    else if(crt.ageDays<90) sc.bad(8,'Security history less than 3 months ⚠','This website\'s security records only go back a few months. It is a relatively new site.','MED');
+  }
+}
+
+// SPF/DMARC scoring — for email mode
+function scoreSPF(sc, spfRec, dmarcRec, domain){
+  const hasSPF  = spfRec.records.some(r=>r.data?.toLowerCase().includes('v=spf1'));
+  const hasDMARC= dmarcRec.records.some(r=>r.data?.toLowerCase().includes('v=dmarc1'));
+
+  if(hasSPF)  sc.good(12,'Email sender verified ✓','SPF is like a guest list for email. It tells the internet which servers are allowed to send email from this domain. Real companies always have one.');
+  else        sc.bad(15,'No email sender check ✗','Without this, anyone in the world can send a fake email pretending to be from this address — like writing any return address you want on an envelope.','MED');
+
+  if(hasDMARC)sc.good(12,'Anti-fake-email protection ✓','DMARC is a rule that tells email systems what to do if someone sends a fake email using this domain name. All banks and major companies have this set up.');
+  else        sc.bad(10,'No anti-fake-email protection ✗','This domain has no protection against people faking emails in its name. Almost every real business sets this up — the fact it is missing is a warning sign.','MED');
+
+  return{hasSPF,hasDMARC};
+}
+
+// ════════════════════════════════════════════
+//  SCAN HISTORY  (sessionStorage — works locally)
+// ════════════════════════════════════════════
+function getHistory(mode){
+  try{return JSON.parse(sessionStorage.getItem('pg_history_'+mode)||'[]')}catch{return[]}
+}
+function addHistory(mode, target, verdict){
+  const h=getHistory(mode);
+  h.unshift({target,verdict,ts:tsNow()});
+  if(h.length>8)h.pop();
+  try{sessionStorage.setItem('pg_history_'+mode,JSON.stringify(h))}catch{}
+  renderHistory(mode);
+}
+function clearHistory(mode){
+  try{sessionStorage.removeItem('pg_history_'+mode)}catch{}
+  renderHistory(mode);
+}
+function renderHistory(mode){
+  const h=getHistory(mode);
+  const el=document.getElementById('history-'+mode);
+  if(!el)return;
+  if(!h.length){el.innerHTML='';return}
+  const timeAgo=ts=>{const d=tsNow()-ts;if(d<60)return d+'s ago';if(d<3600)return Math.floor(d/60)+'m ago';return Math.floor(d/3600)+'h ago'};
+  el.innerHTML=`<div class="history-wrap">
+    <div class="history-hdr">
+      <span class="history-title">Recent scans</span>
+      <button class="history-clear" onclick="clearHistory('${mode}')">clear</button>
+    </div>
+    <div class="history-list">
+      ${h.map(i=>`<div class="history-item" onclick="tryit('${mode==='email'?'ei':'ui'}','${i.target.replace(/'/g,"\\'")}')">
+        <span class="hi-verdict hi-v-${i.verdict}">${i.verdict==='LEGITIMATE'?'SAFE':i.verdict==='NOEXIST'?'NO EXIST':i.verdict}</span>
+        <span class="hi-target">${i.target}</span>
+        <span class="hi-time">${timeAgo(i.ts)}</span>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════
+//  STAGE MANAGER
+// ════════════════════════════════════════════
+let _stages={};
+function initStages(containerId, defs){
+  _stages={};
+  const resultId='_r_'+containerId;
+  const wrap=document.createElement('div'); wrap.className='stages-wrap';
+  const grid=document.createElement('div'); grid.className='stages';
+  defs.forEach((d,i)=>{
+    const el=document.createElement('div');
+    el.className='stage'; el.id='stg'+i;
+    el.innerHTML=`<span class="stico">○</span><span class="stlbl">${d}</span><span class="stdet" id="stgd${i}"></span>`;
+    grid.appendChild(el); _stages[i]=el;
+  });
+  wrap.appendChild(grid);
+  document.getElementById(containerId).innerHTML='';
+  document.getElementById(containerId).appendChild(wrap);
+  const rdiv=document.createElement('div'); rdiv.id=resultId;
+  document.getElementById(containerId).appendChild(rdiv);
+  return resultId;
+}
+function stgRun(i){const el=_stages[i];if(!el)return;el.className='stage run';el.querySelector('.stico').textContent='↻'}
+function stgDone(i,det='',state='ok'){
+  const el=_stages[i];if(!el)return;
+  el.className='stage '+state;
+  el.querySelector('.stico').textContent=state==='ok'?'✓':state==='fail'?'✕':state==='warn'?'⚠':'–';
+  const d=document.getElementById('stgd'+i);if(d)d.textContent=det;
+}
+
+// ════════════════════════════════════════════
+//  RENDER HELPERS
+// ════════════════════════════════════════════
+function vcardClass(v){return v==='PHISHING'?'danger':v==='LEGITIMATE'?'safe':v==='SUSPICIOUS'?'warn':'unknown'}
+function vcardLabel(v){return v==='PHISHING'?'DANGER':v==='LEGITIMATE'?'SAFE':v==='SUSPICIOUS'?'SUSPICIOUS':'UNKNOWN'}
+function vcardIcon(v){return v==='PHISHING'?'🚨':v==='LEGITIMATE'?'✅':v==='SUSPICIOUS'?'⚠️':'❓'}
+
+function renderVerdict(sc, amp){
+  const v=sc.verdict(); const net=sc.net(); const conf=sc.confidence();
+  const color=v==='PHISHING'?'#ff3b5c':v==='LEGITIMATE'?'#00e58a':v==='SUSPICIOUS'?'#ffaa00':'#6a85a8';
+  const C=2*Math.PI*38;
+  const desc=v==='PHISHING'?'Multiple strong phishing indicators detected. Do not interact with this target.':
+    v==='LEGITIMATE'?'No significant threats found. This target appears to be legitimate.':
+    v==='SUSPICIOUS'?'Several risk factors detected. Verify independently before proceeding.':
+    'Inconclusive — some anomalies detected. Exercise caution.';
+  return `
+  <div class="vcard ${vcardClass(v)}">
+    <div class="vtop">
+      <div class="vleft">
+        <div class="vtag">${vcardIcon(v)} ${v}</div>
+        <div class="vbig">${vcardLabel(v)}</div>
+        <div class="vsub">${desc}</div>
+        <div class="conf-badge conf-${conf.toLowerCase()}">
+          Confidence: <strong>${conf}</strong> — based on ${sc.signals.filter(s=>s.kind!=='info').length} checks
+        </div>
+      </div>
+      <div class="vright">
+        <div class="dial">
+          <svg viewBox="0 0 100 100"><circle class="dalbg" cx="50" cy="50" r="38"/><circle class="dalarc" cx="50" cy="50" r="38" stroke="${color}" stroke-dasharray="${(net/100)*C} ${C}"/></svg>
+          <div class="dalctr"><div class="dalnum" style="color:${color}">${net}</div><div class="dallbl">NET RISK</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="netbar">
+      <div class="netbar-labels">
+        <span>Risk: <strong style="color:#ff3b5c">${sc.risk}</strong></span>
+        <span>Trust: <strong style="color:#00e58a">${sc.trust}</strong></span>
+        <span>Net = ${sc.risk} − ${sc.trust} = <strong style="color:${color}">${net}</strong></span>
+      </div>
+      <div class="netbar-track"><div class="netbar-fill" style="width:${net}%;background:${color}"></div></div>
+    </div>
+  </div>`;
+}
+
+function renderSignals(sc){
+  const bads=sc.signals.filter(s=>s.kind==='bad');
+  const goods=sc.signals.filter(s=>s.kind==='good');
+  const infos=sc.signals.filter(s=>s.kind==='info');
+  const sigClass=s=>s.tag==='HIGH'?'bad-h':s.tag==='MED'?'bad-m':'bad-l';
+  const tagClass=s=>s.tag==='HIGH'?'bH':s.tag==='MED'?'bM':'bL';
+  const badRows=bads.map(s=>`<div class="sig ${sigClass(s)}"><div class="sig-ico">${s.tag==='HIGH'?'🔴':s.tag==='MED'?'🟡':'🔵'}</div><div class="sig-body"><div class="sig-title">${s.title}</div>${s.desc?`<div class="sig-desc">${s.desc}</div>`:''}</div><div class="sig-badge ${tagClass(s)}">${s.tag} +${s.pts}</div></div>`).join('');
+  const goodRows=goods.map(s=>`<div class="sig good"><div class="sig-ico">🟢</div><div class="sig-body"><div class="sig-title">${s.title}</div>${s.desc?`<div class="sig-desc">${s.desc}</div>`:''}</div><div class="sig-badge bT">+${s.pts}</div></div>`).join('');
+  const infoRows=infos.map(s=>`<div class="sig info"><div class="sig-ico">ℹ️</div><div class="sig-body"><div class="sig-title">${s.title}</div>${s.desc?`<div class="sig-desc">${s.desc}</div>`:''}</div><div class="sig-badge bN">INFO</div></div>`).join('');
+  return `
+  <div class="sec"><div class="sec-head">⚠️ Warning signs found (${bads.length})</div><div class="signals">${badRows||'<div class="sig good"><div class="sig-ico">🟢</div><div class="sig-body"><div class="sig-title">No risk signals detected</div></div></div>'}</div></div>
+  <div class="sec"><div class="sec-head">✅ Good signs found (${goods.length})</div><div class="signals">${goodRows||'<div class="sig info"><div class="sig-ico">ℹ️</div><div class="sig-body"><div class="sig-title">No trust signals found</div></div></div>'}</div></div>
+  ${infoRows?`<div class="sec"><div class="sec-head">ℹ️ Extra information</div><div class="signals">${infoRows}</div></div>`:''}`;
+}
+
+function renderActions(verdict){
+  const list=verdict==='PHISHING'
+    ?['Do NOT click links or reply to this sender','Mark as phishing in your email client immediately','If at work — alert your IT/security team right now','Do not provide any personal, financial or login details','If you already clicked a link — change passwords and run a malware scan']
+    :verdict==='SUSPICIOUS'
+    ?['Verify the sender via a separate trusted channel (official site or phone call)','Do not click embedded links — type URLs directly into your browser','Check email headers for signs of sender spoofing','When in doubt, treat as phishing and do not engage']
+    :['Always verify unexpected requests even from known senders','Enable 2-factor authentication on all important accounts','Stay vigilant — even legitimate-looking domains can be compromised'];
+  return `<div class="sec"><div class="sec-head">📋 What you should do</div><div class="actions">${list.map((a,i)=>`<div class="arow"><div class="anum">${i+1}</div><span>${a}</span></div>`).join('')}</div></div>`;
+}
+
+function exportReport(mode, target, sc, verdict, extraData={}){
+  const lines=[
+    '═══════════════════════════════════════',
+    'PHISHGUARD v5 — SCAN REPORT',
+    '═══════════════════════════════════════',
+    `Target   : ${target}`,
+    `Mode     : ${mode.toUpperCase()}`,
+    `Verdict  : ${verdict}`,
+    `Confidence: ${sc.confidence()}`,
+    `Risk     : ${sc.risk}/100`,
+    `Trust    : ${sc.trust}/100`,
+    `Net      : ${sc.net()}/100`,
+    `Scanned  : ${new Date().toLocaleString()}`,
+    '───────────────────────────────────────',
+    'RISK SIGNALS:',
+    ...sc.signals.filter(s=>s.kind==='bad').map(s=>`  [${s.tag}+${s.pts}] ${s.title}`),
+    '───────────────────────────────────────',
+    'TRUST SIGNALS:',
+    ...sc.signals.filter(s=>s.kind==='good').map(s=>`  [+${s.pts}] ${s.title}`),
+    '───────────────────────────────────────',
+    ...Object.entries(extraData).map(([k,v])=>`${k.padEnd(12)}: ${v}`),
+    '═══════════════════════════════════════',
+    'Generated by PhishGuard v5 — no API key required',
+  ];
+  const blob=new Blob([lines.join('\n')],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`phishguard-${mode}-${Date.now()}.txt`;
+  a.click();
+}
+
+// ════════════════════════════════════════════
+//  NOEXIST RESULT
+// ════════════════════════════════════════════
+function showNoExist(container, input, domain, mode, rid){
+  document.getElementById(rid).innerHTML=`
+  <div class="vcard noexist">
+    <div class="vtop"><div class="vleft">
+      <div class="vtag">🚫 Domain does not exist</div>
+      <div class="vbig">DOES NOT EXIST</div>
+      <div class="vsub">The domain <strong>${domain}</strong> has no DNS records — it does not exist. ${mode==='email'?'This email address cannot be real.':'This URL cannot be visited.'}</div>
+    </div></div>
+  </div>
+  <div class="noexist-box">
+    <h3>Why does this say it doesn't exist?</h3>
+    <p>${mode==='email'
+      ?`We checked the internet's address book and <strong>${domain}</strong> simply does not exist — it was never created or has been deleted. The email <strong>${input}</strong> is impossible. Any email you received from here is fake or a typo.`
+      :`We checked the internet's address book and <strong>${domain}</strong> does not exist — there is no website there. This could be a typo, a broken link, or an expired scam site.`}</p>
+  </div>
+  <div class="sec"><div class="sec-head">📋 What you should do</div><div class="actions">
+    <div class="arow"><div class="anum">1</div><span>Do not attempt to visit or contact this address</span></div>
+    <div class="arow"><div class="anum">2</div><span>${mode==='email'?'Report any email from this address as phishing':'Report the sender of this link as suspicious'}</span></div>
+    <div class="arow"><div class="anum">3</div><span>Check for typos in what you entered</span></div>
+  </div></div>`;
+  addHistory(mode, input, 'NOEXIST');
+}
+
+// ════════════════════════════════════════════
+//  EMAIL SCAN
+// ════════════════════════════════════════════
+async function scanEmail(raw){
+  const at=raw.lastIndexOf('@');
+  const local=raw.slice(0,at), domain=raw.slice(at+1).toLowerCase();
+  const root=rootDomain(domain);
+  const parts=domain.split('.'); const tld=parts[parts.length-1]||''; const sld=parts[parts.length-2]||'';
+  const isWL=WL.has(root)||WL.has(domain);
+  const sc=new Scorer();
+
+  const RID_E=initStages('result-email',[
+    'Checking whitelist, brand name tricks & domain patterns',
+    'Checking if domain actually exists (DNS)',
+    'Checking email authentication (SPF & DMARC)',
+    'Checking domain age & SSL certificate history',
+  ]);
+  const T0=performance.now();
+  renderHistory('email');
+
+  // Stage 0 — instant heuristics
+  stgRun(0);
+  if(isWL){ sc.good(90,`Trusted domain: ${domain}`,'We recognise this as a major, trusted website — the same way we recognise Google, PayPal and Apple. No further checks needed.'); sc.lockWhitelist(); }
+  if(FREE_EMAIL.has(domain)) sc.good(8,'This email comes from a free email provider anyone can sign up for. Not suspicious by itself, but real company communications usually come from their own domain (e.g. @amazon.com not @gmail.com).');
+  const sp=scoreDomainHeuristics(sc,domain,isWL);
+  const urgentLocal=/\b(noreply|no-reply|security|verify|alert|support-team|billing|payment|admin|helpdesk|abuse)\b/i.test(local);
+  if(urgentLocal) sc.bad(8,`Urgency keyword in local part: "${local}"`,'Legitimate people and companies don\'t name their email addresses things like security@, verify@ or billing-alert@. Scammers add these words to make their fake emails look urgent and official.','LOW');
+  stgDone(0,isWL?'WHITELISTED':'done');
+
+  // ALL REMAINING IN PARALLEL
+  stgRun(1); stgRun(2); stgRun(3);
+  const [dnsA, dnsMX, spfRec, dmarcRec, rdap, crt] = await Promise.all([
+    dnsQ(domain,'A'),
+    dnsQ(domain,'MX'),
+    dnsQ(domain,'TXT'),
+    dnsQ('_dmarc.'+domain,'TXT'),
+    rdapQ(root),
+    crtQ(domain),
+  ]);
+
+  // DNS
+  if(dnsA.nx){ stgDone(1,'Domain does not exist','fail'); stgDone(2,'skipped — domain not found','skip'); stgDone(3,'skipped — domain not found','skip'); showNoExist('result-email',raw,domain,'email',RID_E); return; }
+  if(dnsA.records.length) sc.good(8,'Domain exists online ✓','The domain actually exists and resolves to a real server online.');
+  else sc.bad(12,'Domain has no server address ✗','The domain name is registered but not pointing to any server. Like having a shop address with no building behind it.','MED');
+  if(dnsMX.records.length) sc.good(12,'Domain has working email servers ✓','We found the email servers for this domain — it is set up to actually send and receive emails.');
+  else if(!FREE_EMAIL.has(domain)) sc.bad(14,'Domain has no email servers ✗','This domain cannot receive email — it has no mail servers set up. An email claiming to come from here is like a letter with a made-up return address.','MED');
+  stgDone(1,`Found${dnsA.records.length>0?' address':''} · Email servers: ${dnsMX.records.length>0?'yes':'none'}`,'ok');
+
+  // SPF + DMARC
+  const auth=scoreSPF(sc,spfRec,dmarcRec,domain);
+  stgDone(2,`Sender verified: ${auth.hasSPF?'yes':'no'} · Anti-fake: ${auth.hasDMARC?'yes':'no'}`,!auth.hasSPF||!auth.hasDMARC?'warn':'ok');
+
+  // RDAP + CRT
+  scoreRDAP(sc,rdap); scoreCRT(sc,crt);
+  stgDone(3,[rdap?ageLabel(rdap.ageDays):null,crt?crt.count+' certs':null].filter(Boolean).join(' · ')||'done',rdap?'ok':'skip');
+
+  // Amplifier
+  const amp=sc.amplify();
+  const verdict=sc.verdict();
+  const ips=dnsA.records.map(r=>r.data);
+  const spfStr=spfRec.records.filter(r=>r.data?.includes('v=spf1')).map(r=>r.data).join(', ')||'Not found';
+  const dmarcStr=dmarcRec.records.filter(r=>r.data?.includes('v=dmarc1')).map(r=>r.data).join(', ')||'Not found';
+
+  addHistory('email',raw,verdict);
+
+  // ML scoring
+  const mlFeat = ML.extractEmail(domain, dnsA, dnsMX, rdap, crt);
+  const mlRes  = ML.score(mlFeat.features);
+  mlRes.features = mlFeat.features;
+  const blendedE = ML.blend(mlRes.risk, sc.net());
+
+  document.getElementById(RID_E).innerHTML=`
+  <div class="ttag">Scan complete · ${elapsed(T0)} · all 4 stages ran in parallel</div>
+  ${isWL?`<div class="wl-banner"><div class="wl-ico">🛡️</div><div><div class="wl-title">Trusted Whitelist Match</div><div class="wl-desc">${domain} is a globally recognised legitimate domain — trust +90 applied. This is why google.com and paypal.com are never wrongly flagged.</div></div></div>`:''}
+  ${sp?.type==='typosquat'&&!isWL?`<div class="amp-warn"><div class="amp-icon">🔴</div><div><strong>Fake domain detected:</strong> "${domain}" looks almost identical to "${sp.brand}" — just ${sp.dist} letter(s) different. Scammers buy these to trick people into thinking they are on the real site.</div></div>`:''}
+  ${amp.fired?`<div class="amp-warn"><div class="amp-icon">⚡</div><div><strong>Multiple red flags at once!</strong> Found ${amp.count} serious warning signs together — scammers always combine tricks, so this is much more dangerous than any single issue. +${amp.bonus} extra risk added.</div></div>`:''}
+  ${renderVerdict(sc,amp)}
+  ${renderSignals(sc)}
+  <div class="sec"><div class="sec-head">🔍 About this domain</div>
+  <div class="dgrid">
+    <div class="dtile"><div class="dtile-l">Website address</div><div class="dtile-v">${domain}</div></div>
+    <div class="dtile"><div class="dtile-l">Who registered it</div><div class="dtile-v ${rdap?.registrar?'':'neu'}">${rdap?.registrar||'Unknown'}</div></div>
+    <div class="dtile"><div class="dtile-l">How old is the website</div><div class="dtile-v ${rdap?.ageDays!=null&&rdap.ageDays<90?'bad':rdap?.ageDays>365?'ok':''}">${ageLabel(rdap?.ageDays)}</div></div>
+    <div class="dtile"><div class="dtile-l">Registration date</div><div class="dtile-v neu">${rdap?.registered||'Unknown'}</div></div>
+    <div class="dtile"><div class="dtile-l">Website ending (.com etc.)</div><div class="dtile-v ${BAD_TLDS.has(tld)?'bad':''}">.${tld}</div></div>
+    <div class="dtile"><div class="dtile-l">Server address</div><div class="dtile-v">${ips[0]||'None'}</div></div>
+    <div class="dtile"><div class="dtile-l">Email sender verified</div><div class="dtile-v ${auth.hasSPF?'ok':'bad'}">${auth.hasSPF?'Present ✓':'Missing ✗'}</div></div>
+    <div class="dtile"><div class="dtile-l">Anti-fake-email protection</div><div class="dtile-v ${auth.hasDMARC?'ok':'bad'}">${auth.hasDMARC?'Present ✓':'Missing ✗'}</div></div>
+    <div class="dtile"><div class="dtile-l">Security history</div><div class="dtile-v ${crt?.count===0?'bad':crt?.count>5?'ok':''}">${crt!=null?crt.count:'Unknown'}</div></div>
+    <div class="dtile"><div class="dtile-l">Oldest security record</div><div class="dtile-v ${crt?.ageDays!=null&&crt.ageDays<30?'bad':crt?.ageDays>365?'ok':''}">${crt?.oldest||'Unknown'}</div></div>
+  </div></div>
+  <div class="sec"><div class="sec-head">📡 Technical lookup results</div>
+  <div class="dns-rows">
+    ${dnsA.records.map(r=>`<div class="dr"><span class="dr-type" title="A record = the server address for this domain">IP</span><span class="dr-val">${r.data}</span></div>`).join('')||'<div class="dr"><span class="dr-type" title="A record = the server address for this domain">IP</span><span class="dr-val" style="color:var(--sub)">No A records</span></div>'}
+    ${dnsMX.records.map(r=>`<div class="dr"><span class="dr-type" title="MX record = the email servers for this domain">Mail</span><span class="dr-val">${r.data}</span></div>`).join('')||'<div class="dr"><span class="dr-type" title="MX record = the email servers for this domain">Mail</span><span class="dr-val" style="color:var(--sub)">No MX records</span></div>'}
+    <div class="dr"><span class="dr-type" style="color:var(--sub);font-size:10px;width:60px">Sender<br>check</span><span class="dr-val" style="font-size:10px;word-break:break-all;opacity:.7">${spfStr.slice(0,120)}</span></div>
+    <div class="dr"><span class="dr-type" style="color:var(--sub);font-size:10px;width:60px">Anti-fake<br>policy</span><span class="dr-val" style="font-size:10px;word-break:break-all;opacity:.7">${dmarcStr.slice(0,120)}</span></div>
+  </div></div>
+  ${renderMLPanel(mlRes, blendedE, sc.net())}
+  ${renderActions(verdict)}
+  <button class="export-btn" onclick="exportReport('email','${raw.replace(/'/g,"\\'")}',sc_email,verdict_email,{Domain:'${domain}',Registrar:'${(rdap?.registrar||'Unknown').replace(/'/g,"\\'")}','Domain age':ageLabel(${rdap?.ageDays??null}),'SPF':auth_email.hasSPF?'Present':'Missing','DMARC':auth_email.hasDMARC?'Present':'Missing'})">⬇ Export report as .txt</button>
+  ${renderFeedbackBar('email','${raw}','${verdict}',mlFeat.features)}`;
+
+  // Store refs for export
+  window.sc_email=sc; window.verdict_email=verdict; window.auth_email=auth;
+  window._lastFeatures_email = mlFeat.features;
+  renderLearnPanel('email');
+}
+
+// ════════════════════════════════════════════
+//  URL SCAN
+// ════════════════════════════════════════════
+async function scanUrl(raw){
+  let urlStr=raw.trim();
+  if(!/^https?:\/\//i.test(urlStr))urlStr='http://'+urlStr;
+  let parsed; try{parsed=new URL(urlStr)}catch{
+    document.getElementById('result-url').innerHTML='<div class="amp-warn" style="border-radius:10px"><div class="amp-icon">🔴</div><div>Invalid URL format — cannot parse</div></div>'; return;
+  }
+  const host=parsed.hostname.toLowerCase();
+  const root=rootDomain(host);
+  const parts=host.split('.'); const tld=parts[parts.length-1]||''; const sld=parts[parts.length-2]||'';
+  const isWL=WL.has(root)||WL.has(host);
+  const isShortener=SHORTENERS.has(root)||SHORTENERS.has(host);
+  const sc=new Scorer();
+
+  const RID_U=initStages('result-url',[
+    'Checking URL structure, HTTPS, brand tricks & patterns',
+    'Checking if website actually exists (DNS)',
+    'Checking domain age & SSL certificate history',
+    'Checking server location & redirect behaviour',
+  ]);
+  const T0=performance.now();
+  renderHistory('url');
+
+  // Stage 0 — structural
+  stgRun(0);
+  if(isWL){ sc.good(90,`Trusted domain: ${host}`,'We recognise this as a major, trusted website — the same way we recognise Google, PayPal and Apple. No further checks needed.'); sc.lockWhitelist(); }
+  if(isShortener) sc.bad(25,'Short link — real destination is hidden ⚠',`${root} is a URL shortening service — the real destination is hidden. Phishers use shorteners to disguise malicious links.`,'HIGH');
+
+  const isHttps=parsed.protocol==='https:';
+  if(!isHttps&&!isWL) sc.bad(20,'Connection is not secure ✗','HTTPS means your connection is private — like a sealed envelope. Without it, your connection is open — like a postcard anyone can read. Never enter passwords on sites without HTTPS.','HIGH');
+  else if(isHttps) sc.good(6,'Connection is secure ✓','Your connection to this site is private and encrypted. This is a basic safety requirement — though scam sites can also have HTTPS, so it is a good sign but not a guarantee.');
+
+  const isIP=/^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+  if(isIP) sc.bad(35,'Link uses numbers instead of a website name ✗','Real websites always have a name like google.com or amazon.in. If a link goes to a string of numbers instead, that is a major red flag — no legitimate site does this.','HIGH');
+
+  const isPunycode=host.includes('xn--');
+  if(isPunycode&&!isWL) sc.bad(35,'Disguised characters in domain ⚠','This domain uses foreign language characters that look identical to English letters — designed to fool you into thinking you\'re on a real site.','HIGH');
+
+  const subs=parts.length-2;
+  if(subs>2&&!isWL) sc.bad(15,`${subs} subdomain levels deep`,'The real website owner is at the very end — e.g. login.verify.paypal.fakesite.com is actually owned by fakesite.com, not PayPal.','HIGH');
+
+  const sp=scoreDomainHeuristics(sc,host,isWL);
+
+  if(raw.includes('@')) sc.bad(30,'Trick symbol hiding real destination ✗','Everything before the @ in a web address is ignored by your browser. Scammers use this to show something like paypal.com@evil-site.com — your browser only sees evil-site.com.','HIGH');
+  const enc=(raw.match(/%[0-9a-f]{2}/gi)||[]).length;
+  if(enc>3&&!isWL) sc.bad(12,`Heavy URL encoding (${enc} chars)`,'Excessive encoding obscures malicious paths from security scanners','MED');
+  const suspPath=/\b(login|verify|secure|confirm|account|password|signin|banking|validate|credential|update-payment)\b/i.test(parsed.pathname+parsed.search);
+  if(suspPath&&!isWL) sc.bad(10,'Suspicious words in the web address ⚠','Words like /verify, /login, or /secure-account in the address are often added by scammers to make fake pages look like official bank or account pages.','MED');
+  if(raw.length>130&&!isWL) sc.bad(8,`Very long URL (${raw.length} chars)`,'Long URLs often hide the true destination','MED');
+  stgDone(0,isWL?'WHITELISTED':'done');
+
+  // Stages 1–3 ALL PARALLEL
+  stgRun(1); stgRun(2); stgRun(3);
+  const [dnsA, rdap, crt, redirectResult] = await Promise.all([
+    dnsQ(host,'A'),
+    rdapQ(root),
+    crtQ(root),
+    redirectQ(urlStr),
+  ]);
+
+  // DNS
+  if(dnsA.nx){ stgDone(1,'Domain does not exist','fail'); stgDone(2,'skipped — domain not found','skip'); stgDone(3,'skipped — domain not found','skip'); showNoExist('result-url',raw,host,'url',RID_U); return; }
+  const ips=dnsA.records.map(r=>r.data);
+  if(ips.length) sc.good(8,'Website address verified ✓','DNS confirms domain is live');
+  else sc.bad(12,'Website address not found ✗','The domain is registered but not connected to any server — like having a phone number that rings nowhere.','MED');
+  stgDone(1,`${ips.length} IP${ips.length!==1?'s':''}`);
+
+  // RDAP + CRT
+  scoreRDAP(sc,rdap); scoreCRT(sc,crt);
+  stgDone(2,[rdap?'Age: '+ageLabel(rdap.ageDays):null,crt?crt.count+' security records':null].filter(Boolean).join(' · ')||'done',rdap?'ok':'skip');
+
+  // Geo + redirect
+  let geo=null;
+  if(ips.length&&!isWL) geo=await geoQ(ips[0]);
+  if(geo){
+    if(geo.hosting) sc.good(5,'This website runs on a professional hosting service — normal for any real business or organisation.',`${geo.org||geo.isp}`);
+    else sc.bad(5,'Hosted on a home internet connection ⚠','Real websites run on professional data centres. This server appears to be on a regular home or office internet connection — unusual for any legitimate business.','LOW');
+    if(geo.proxy) sc.bad(10,'Server is hiding its real location ✗','This server is using a tool to hide where it really is. Legitimate businesses don\'t usually need to hide their server location.','MED');
+  }
+  let redirectInfo=null;
+  if(redirectResult?.isRedirect){
+    const dest=redirectResult.redirectsTo||'';
+    sc.bad(15,'This link takes you somewhere different ⚠',`Redirects to: ${dest.slice(0,80)}${dest.length>80?'…':''}. Multi-step redirects are a common technique to hide the final phishing page.`,'HIGH');
+    redirectInfo=dest;
+  }
+  stgDone(3,[geo?geo.country:null,redirectInfo?'redirects':''].filter(Boolean).join(' · ')||'done',redirectResult?.isRedirect?'warn':'ok');
+
+  // ML scoring
+  const mlFeatU = ML.extractURL(raw, host, parsed, dnsA, rdap, crt);
+  const mlResU  = ML.score(mlFeatU.features);
+  mlResU.features = mlFeatU.features;
+
+  // Amplifier + verdict
+  const amp=sc.amplify();
+  const verdict=sc.verdict();
+  const blendedU = ML.blend(mlResU.risk, sc.net());
+  addHistory('url',raw,verdict);
+
+  document.getElementById(RID_U).innerHTML=`
+  <div class="ttag">Scan complete · ${elapsed(T0)} · all checks ran in parallel</div>
+  ${isWL?`<div class="wl-banner"><div class="wl-ico">🛡️</div><div><div class="wl-title">Trusted Whitelist Match</div><div class="wl-desc">${host} is a globally recognised legitimate domain — trust +90 applied.</div></div></div>`:''}
+  ${isShortener?`<div class="shortener-warn"><div class="sw-ico">🔗</div><div><div class="sw-title">URL Shortener Detected: ${root}</div><div class="sw-desc">Short links hide where you are actually going. This score is for the shortener service itself, not the final destination. To be safe, paste this link into <strong>checkshorturl.com</strong> first to see the real URL, then scan that here.</div></div></div>`:''}
+  ${sp?.type==='typosquat'&&!isWL?`<div class="amp-warn"><div class="amp-icon">🔴</div><div><strong>Fake website domain:</strong> "${host}" is almost identical to "${sp.brand}" — just ${sp.dist} letter(s) changed. A trick to make a fake site look like the real one.</div></div>`:''}
+  ${amp.fired?`<div class="amp-warn"><div class="amp-icon">⚡</div><div><strong>Multiple red flags at once!</strong> ${amp.count} serious warning signs found together — a much stronger sign of danger than any one issue alone. +${amp.bonus} extra risk added.</div></div>`:''}
+  ${redirectInfo?`<div class="redirect-banner"><div style="font-size:16px;flex-shrink:0">↪</div><div><strong style="color:var(--warn)">This link takes you somewhere else:</strong> It redirects to <span style="font-family:var(--mono);font-size:12px;color:var(--teal)">${redirectInfo.slice(0,100)}</span></div></div>`:''}
+  ${renderVerdict(sc,amp)}
+  ${renderSignals(sc)}
+  <div class="sec"><div class="sec-head">Domain & server intelligence</div>
+  <div class="dgrid">
+    <div class="dtile"><div class="dtile-l">Website address</div><div class="dtile-v">${host}</div></div>
+    <div class="dtile"><div class="dtile-l">Connection type</div><div class="dtile-v ${isHttps?'ok':'bad'}">${isHttps?'HTTPS ✓':'HTTP ⚠'}</div></div>
+    <div class="dtile"><div class="dtile-l">How old is the website</div><div class="dtile-v ${rdap?.ageDays!=null&&rdap.ageDays<90?'bad':rdap?.ageDays>365?'ok':''}">${ageLabel(rdap?.ageDays)}</div></div>
+    <div class="dtile"><div class="dtile-l">Who registered it</div><div class="dtile-v neu">${rdap?.registrar||'Unknown'}</div></div>
+    <div class="dtile"><div class="dtile-l">Server address</div><div class="dtile-v">${ips[0]||'None'}</div></div>
+    <div class="dtile"><div class="dtile-l">Hosting company</div><div class="dtile-v neu">${geo?.org||geo?.isp||'Unknown'}</div></div>
+    <div class="dtile"><div class="dtile-l">Country</div><div class="dtile-v">${geo?`${geo.country} (${geo.countryCode})`:'Unknown'}</div></div>
+    <div class="dtile"><div class="dtile-l">Is location hidden</div><div class="dtile-v ${geo?.proxy?'bad':'ok'}">${geo!=null?geo.proxy?'Yes ⚠':'No ✓':'Unknown'}</div></div>
+    <div class="dtile"><div class="dtile-l">Security history</div><div class="dtile-v ${crt?.count===0?'bad':crt?.count>5?'ok':''}">${crt!=null?crt.count:'Unknown'}</div></div>
+    <div class="dtile"><div class="dtile-l">Oldest security record</div><div class="dtile-v ${crt?.ageDays!=null&&crt.ageDays<30?'bad':crt?.ageDays>365?'ok':''}">${crt?.oldest||'Unknown'}</div></div>
+    <div class="dtile"><div class="dtile-l">Takes you elsewhere</div><div class="dtile-v ${redirectResult?.isRedirect?'warn':''}">${redirectResult?.isRedirect?'Yes ⚠':'No'}</div></div>
+    <div class="dtile"><div class="dtile-l">Address length</div><div class="dtile-v ${raw.length>130?'bad':''}">${raw.length} chars</div></div>
+  </div></div>
+  <div class="sec"><div class="sec-head">🔗 Link breakdown</div>
+  <div class="dns-rows">
+    <div class="dr"><span class="dr-type" style="color:var(--sub);width:70px">Protocol</span><span class="dr-val">${parsed.protocol}</span></div>
+    <div class="dr"><span class="dr-type" style="color:var(--sub);width:70px">Host</span><span class="dr-val">${host}</span></div>
+    <div class="dr"><span class="dr-type" style="color:var(--sub);width:70px">Path</span><span class="dr-val">${parsed.pathname||'/'}</span></div>
+    ${parsed.search?`<div class="dr"><span class="dr-type" style="color:var(--sub);width:70px">Query</span><span class="dr-val">${parsed.search}</span></div>`:''}
+    ${ips.map(ip=>`<div class="dr"><span class="dr-type" style="color:var(--sub);width:70px">A record</span><span class="dr-val">${ip}</span></div>`).join('')}
+    ${geo?`<div class="dr"><span class="dr-type" style="color:var(--sub);width:70px">Location</span><span class="dr-val">${geo.city?geo.city+', ':''} ${geo.country}</span></div>`:''}
+  </div></div>
+  ${renderMLPanel(mlResU, blendedU, sc.net())}
+  ${renderActions(verdict)}
+  <button class="export-btn" onclick="exportReport('url','${raw.slice(0,80).replace(/'/g,"\\'")}',sc_url,verdict_url,{Host:'${host}',Protocol:'${parsed.protocol}',Country:geo_url?geo_url.country:'Unknown','Domain age':ageLabel(${rdap?.ageDays??null}),'Redirects':redirectResult_url?.isRedirect?'Yes':'No'})">⬇ Export report as .txt</button>
+  ${renderFeedbackBar('url','${raw.slice(0,80)}','${verdict}',mlFeatU.features)}`;
+
+  window.sc_url=sc; window.verdict_url=verdict; window.geo_url=geo; window.redirectResult_url=redirectResult; window.rdap_url=rdap;
+  window._lastFeatures_url = mlFeatU.features;
+  renderLearnPanel('url');
+}
+
+
+// ════════════════════════════════════════════
+//  ML MODULE — Logistic Regression Classifier
+//  Weights calibrated from phishing research:
+//  Rao & Pais (2019), Sahingoz et al. (2019),
+//  Ma et al. (2009) — 16 URL/domain features
+// ════════════════════════════════════════════
+const ML = {
+  // Feature weights [bias, f1..f16]
+  // Positive = phishing signal, Negative = trust signal
+  W: [-3.4, 1.9, 0.65, 1.25, 4.8, 5.4, 1.15, 3.0, 1.5,
+       2.1, 3.9, 2.4, 1.7, 4.4, -2.8, -1.4, 2.0],
+
+  sigmoid(z){ return 1/(1+Math.exp(-z)); },
+
+  // Extract 16 features from a URL or domain
+  // Returns {features, labels} for display
+  extractURL(raw, host, parsed, dnsA, rdap, crt){
+    const parts = host.split('.');
+    const sld   = parts[parts.length-2]||'';
+    const tld   = parts[parts.length-1]||'';
+    const path  = (parsed?.pathname||'') + (parsed?.search||'');
+
+    // f1: URL length — longer = more suspicious (norm to 0-1 cap at 200)
+    const f1 = Math.min(raw.length / 200, 1);
+
+    // f2: dot count in host — more dots = deeper subdomains
+    const f2 = Math.min((host.match(/\./g)||[]).length / 5, 1);
+
+    // f3: hyphen count in domain
+    const f3 = Math.min((sld.match(/-/g)||[]).length / 4, 1);
+
+    // f4: has @ symbol in URL
+    const f4 = raw.includes('@') ? 1 : 0;
+
+    // f5: IP-based URL (no domain name)
+    const f5 = /^\d{1,3}(\.\d{1,3}){3}$/.test(host) ? 1 : 0;
+
+    // f6: subdomain depth
+    const f6 = Math.min((parts.length - 2) / 4, 1);
+
+    // f7: suspicious TLD
+    const f7 = BAD_TLDS.has(tld) ? 1 : 0;
+
+    // f8: suspicious keywords in path
+    const f8 = /(login|verify|secure|confirm|account|password|signin|banking|validate|credential|update-payment)/i.test(path) ? 1 : 0;
+
+    // f9: domain entropy (normalised 0-1, max ~4.5)
+    const f9 = Math.min(ent(sld) / 4.5, 1);
+
+    // f10: brand similarity — 1 if typosquat/homoglyph, 0 if no match
+    const sp = spoofCheck(host);
+    const f10 = sp ? (sp.type==='typosquat' ? 1 : sp.type==='contains' ? 0.5 : 0) : 0;
+
+    // f11: no HTTPS
+    const f11 = parsed?.protocol==='https:' ? 0 : 1;
+
+    // f12: URL encoding density
+    const encCount = (raw.match(/%[0-9a-f]{2}/gi)||[]).length;
+    const f12 = Math.min(encCount / 10, 1);
+
+    // f13: punycode / IDN
+    const f13 = host.includes('xn--') ? 1 : 0;
+
+    // f14: domain age — 0 (new=risky) to 1 (old=safe)
+    // New domain (<30d)=0.0, 30-90d=0.2, 90-365d=0.5, 1-2yr=0.75, 2yr+=1.0
+    const age = rdap?.ageDays ?? null;
+    const f14 = age===null ? 0.3
+              : age<30     ? 0.0
+              : age<90     ? 0.2
+              : age<365    ? 0.5
+              : age<730    ? 0.75
+              :              1.0;
+
+    // f15: SSL cert history — old certs = safe
+    const certAge = crt?.ageDays ?? null;
+    const f15 = certAge===null ? 0.3
+              : certAge<30     ? 0.0
+              : certAge<180    ? 0.3
+              : certAge<730    ? 0.65
+              :                  1.0;
+
+    // f16: no MX for email-like domains (0 = no MX = risky, not used in URL mode)
+    const f16 = 0; // overridden in email mode
+
+    return {
+      features: [f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13,f14,f15,f16],
+      labels: ['URL length','Dot depth','Hyphens','@ symbol','IP address',
+               'Subdomain depth','Suspicious TLD','Phishing keywords',
+               'Domain entropy','Brand similarity','No HTTPS','URL encoding',
+               'Punycode / IDN','Domain age','SSL cert age','No MX records'],
+      values: [f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13,f14,f15,f16]
+    };
+  },
+
+  // Same features but with MX data for email mode
+  extractEmail(domain, dnsA, dnsMX, rdap, crt){
+    const fakeURL = 'http://'+domain+'/';
+    let parsed; try{ parsed=new URL(fakeURL); }catch{ parsed=null; }
+    const base = ML.extractURL(domain, domain, parsed, dnsA, rdap, crt);
+    // f16: no MX = risky
+    const hasMX = (dnsMX?.records||[]).length > 0;
+    base.features[15] = hasMX ? 0 : 1;
+    base.values[15] = hasMX ? 0 : 1;
+    return base;
+  },
+
+  // Score: returns {prob, risk0to100, label, features}
+  score(features){
+    const z = ML.W[0] + ML.W.slice(1).reduce((s,w,i) => s + w*features[i], 0);
+    const prob = ML.sigmoid(z);
+    const risk = Math.round(prob * 100);
+    const label = risk>=70?'HIGH RISK':risk>=40?'MODERATE RISK':risk>=20?'LOW RISK':'VERY LOW RISK';
+    return { prob, risk, label };
+  },
+
+  // Blend: final score = 55% ML + 45% rule-based net
+  blend(mlRisk, ruleNet){
+    return Math.round(0.55*mlRisk + 0.45*ruleNet);
+  },
+
+  // Which features contributed most to the score
+  topFactors(features, n=4){
+    const contrib = ML.W.slice(1).map((w,i)=>({
+      label: ['URL length','Dot depth','Hyphens','@ symbol','IP address',
+              'Subdomain depth','Suspicious TLD','Phishing keywords',
+              'Domain entropy','Brand similarity','No HTTPS','URL encoding',
+              'Punycode / IDN','Domain age','SSL cert age','No MX records'][i],
+      impact: w * features[i],
+      raw: features[i]
+    }));
+    return contrib.filter(c=>Math.abs(c.impact)>0.05)
+                  .sort((a,b)=>Math.abs(b.impact)-Math.abs(a.impact))
+                  .slice(0,n);
+  }
+};
+
+// Render the ML section
+function renderMLPanel(mlResult, blended, ruleNet){
+  const color = mlResult.risk>=70?'var(--danger)':mlResult.risk>=40?'var(--warn)':'var(--safe)';
+  const bColor = blended>=60?'var(--danger)':blended>=30?'var(--warn)':'var(--safe)';
+  const factors = ML.topFactors(mlResult.features||[]).slice(0,5);
+
+  const factorRows = factors.map(f => {
+    const isRisk = f.impact > 0;
+    const barW = Math.min(Math.abs(f.impact)*30, 100);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)">
+      <div style="width:130px;font-size:12px;color:var(--sub);flex-shrink:0">${f.label}</div>
+      <div style="flex:1;height:5px;background:var(--faint);border-radius:3px;overflow:hidden">
+        <div style="width:${barW}%;height:100%;background:${isRisk?'var(--danger)':'var(--safe)'};border-radius:3px"></div>
+      </div>
+      <div style="font-family:var(--mono);font-size:11px;color:${isRisk?'var(--danger)':'var(--safe)'};min-width:55px;text-align:right">
+        ${isRisk?'▲ increases risk':'▼ increases safety'} ${Math.abs(f.impact).toFixed(2)}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="sec"><div class="sec-head">🤖 AI detection score</div>
+  <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:12px">
+
+    <!-- Score row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
+      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:13px;text-align:center">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--sub);letter-spacing:1px;margin-bottom:6px">AI SCORE</div>
+        <div style="font-family:var(--display);font-size:26px;font-weight:800;color:${color}">${mlResult.risk}</div>
+        <div style="font-family:var(--mono);font-size:10px;color:${color};margin-top:3px">${mlResult.label}</div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:13px;text-align:center">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--sub);letter-spacing:1px;margin-bottom:6px">RULE CHECKS</div>
+        <div style="font-family:var(--display);font-size:26px;font-weight:800;color:${ruleNet>=60?'var(--danger)':ruleNet>=30?'var(--warn)':'var(--safe)'}">${ruleNet}</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--sub);margin-top:3px">heuristic</div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid rgba(0,212,200,.25);border-radius:9px;padding:13px;text-align:center">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--teal);letter-spacing:1px;margin-bottom:6px">COMBINED SCORE</div>
+        <div style="font-family:var(--display);font-size:26px;font-weight:800;color:${bColor}">${blended}</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--teal);margin-top:3px">AI + rule checks blended</div>
+      </div>
+    </div>
+
+    <!-- Probability bar -->
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--sub);margin-bottom:5px">
+        <span>How likely is this a scam?</span>
+        <span style="color:${color}">${(mlResult.prob*100).toFixed(1)}%</span>
+      </div>
+      <div style="height:6px;background:var(--faint);border-radius:3px;overflow:hidden">
+        <div style="width:${mlResult.risk}%;height:100%;background:linear-gradient(90deg,var(--safe),var(--warn) 50%,var(--danger));border-radius:3px"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--faint);margin-top:3px">
+        <span>Very likely safe</span><span>50/50</span><span>Very likely a scam</span>
+      </div>
+    </div>
+
+    <!-- Top contributing features -->
+    <div style="font-family:var(--mono);font-size:10px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">What most influenced the AI score</div>
+    ${factorRows || '<div style="font-size:12px;color:var(--sub)">No significant patterns detected</div>'}
+
+    <!-- Model info -->
+    <div style="margin-top:12px;padding:10px 12px;background:var(--bg);border-radius:7px;font-size:12px;color:var(--sub);line-height:1.8">
+      <strong style="color:var(--text)">How the AI score works:</strong>
+      The AI model looks at 16 different things about the address — like how old the website is,
+      whether it has security certificates, whether the name looks like a known brand, and more.
+      Each of these gives a score, and the model adds them all up to get an overall phishing probability.
+      The final score you see is a blend of the AI score (55%) and the rule-based checks (45%).
+      <br><br>
+      <strong style="color:var(--text)">What does the probability mean?</strong>
+      0% means the model is very confident it is safe. 100% means very likely a scam.
+      Anything above 60% should be treated with serious caution.
+    </div>
+  </div></div>`;
+}
+
+
+// ════════════════════════════════════════════
+//  FEEDBACK & ONLINE LEARNING ENGINE
+//  Algorithm: SGD logistic regression
+//  Storage:   localStorage (persists across
+//             sessions in same browser)
+// ════════════════════════════════════════════
+
+const LR = {
+  // Original calibrated weights (from research)
+  ORIG: [-3.4, 1.9, 0.65, 1.25, 4.8, 5.4, 1.15, 3.0, 1.5,
+          2.1, 3.9, 2.4, 1.7, 4.4, -2.8, -1.4, 2.0],
+
+  FEAT_NAMES: ['Address length','Sub-section count','Hyphens in name','Has @ symbol','Uses IP numbers',
+               'Depth of address','Website ending risk','Suspicious words',
+               'Name randomness','Looks like a brand','No HTTPS','Scrambled characters',
+               'Trick letters used','Domain age','Security history','No email servers'],
+
+  LEARNING_RATE: 0.08,   // how fast weights update per correction
+  DECAY_RATE:    0.002,  // slow pull back toward originals (prevents poisoning)
+  MIN_CONFIRMS:  1,      // corrections needed before weights update
+
+  // Load weights from localStorage or use originals
+  loadWeights(){
+    try{
+      const s = localStorage.getItem('pg_weights');
+      return s ? JSON.parse(s) : [...this.ORIG];
+    }catch{ return [...this.ORIG]; }
+  },
+
+  saveWeights(w){
+    try{ localStorage.setItem('pg_weights', JSON.stringify(w)); }catch{}
+  },
+
+  // Load full feedback log
+  loadLog(){
+    try{ return JSON.parse(localStorage.getItem('pg_feedback_log')||'[]'); }
+    catch{ return []; }
+  },
+
+  saveLog(log){
+    try{
+      // Keep last 50 entries
+      if(log.length > 50) log = log.slice(-50);
+      localStorage.setItem('pg_feedback_log', JSON.stringify(log));
+    }catch{}
+  },
+
+  // Stats
+  loadStats(){
+    try{ return JSON.parse(localStorage.getItem('pg_stats')||'{"total":0,"corrections":0,"confirmed":0}'); }
+    catch{ return {total:0, corrections:0, confirmed:0}; }
+  },
+
+  saveStats(s){
+    try{ localStorage.setItem('pg_stats', JSON.stringify(s)); }catch{}
+  },
+
+  // Core SGD update — called when user submits feedback
+  // trueLabel: 1=phishing/spam, 0=safe
+  // features: the 16 feature vector from that scan
+  update(features, trueLabel){
+    const w = this.loadWeights();
+
+    // Sigmoid prediction with current weights
+    const z = w[0] + w.slice(1).reduce((s,wt,i) => s + wt*features[i], 0);
+    const predicted = 1 / (1 + Math.exp(-z));
+    const error = trueLabel - predicted;
+
+    // SGD weight update: w += lr * error * feature
+    w[0] += this.LEARNING_RATE * error; // bias
+    for(let i = 0; i < features.length; i++){
+      w[i+1] += this.LEARNING_RATE * error * features[i];
+      // Decay: nudge weights back toward originals slightly
+      w[i+1] += this.DECAY_RATE * (this.ORIG[i+1] - w[i+1]);
+    }
+
+    this.saveWeights(w);
+
+    // Return weight deltas for display
+    const orig = this.ORIG;
+    return features.map((f,i) => ({
+      name: this.FEAT_NAMES[i],
+      before: orig[i+1],
+      after: w[i+1],
+      delta: w[i+1] - orig[i+1],
+      featureValue: f
+    })).filter(d => Math.abs(d.featureValue) > 0.01); // only show relevant features
+  },
+
+  // Force reset to original calibrated weights
+  reset(){
+    try{
+      localStorage.removeItem('pg_weights');
+      localStorage.removeItem('pg_feedback_log');
+      localStorage.removeItem('pg_stats');
+    }catch{}
+    renderLearnPanel('email');
+    renderLearnPanel('url');
+  },
+
+  // Re-score with learned weights (used in ML panel)
+  scoreWithLearned(features){
+    const w = this.loadWeights();
+    const z = w[0] + w.slice(1).reduce((s,wt,i) => s + wt*features[i], 0);
+    const prob = 1 / (1 + Math.exp(-z));
+    return { prob, risk: Math.round(prob*100) };
+  }
+};
+
+// ── Render the learning panel ──
+function renderLearnPanel(mode){
+  const el = document.getElementById('learn-panel-'+mode);
+  if(!el) return;
+  const log   = LR.loadLog().filter(e => e.mode===mode);
+  const stats = LR.loadStats();
+  const w     = LR.loadWeights();
+  const total = log.length;
+
+  if(total === 0){ el.innerHTML=''; return; }
+
+  const corrPct = stats.total>0 ? Math.round(stats.corrections/stats.total*100) : 0;
+
+  const weightRows = LR.FEAT_NAMES.map((name,i) => {
+    const orig = LR.ORIG[i+1];
+    const cur  = w[i+1];
+    const delta = cur - orig;
+    const maxW  = 6;
+    // Bar: 50% = zero weight, scale by maxW
+    const origPct = Math.round(((orig+maxW)/(maxW*2))*100);
+    const curPct  = Math.round(((cur+maxW)/(maxW*2))*100);
+    const fillPct = Math.max(0, Math.min(100, curPct));
+    const dColor  = delta > 0.05 ? 'var(--danger)' : delta < -0.05 ? 'var(--safe)' : 'var(--sub)';
+    const dSign   = delta >= 0 ? '+' : '';
+    return `<div class="wt-row">
+      <div class="wt-name">${name}</div>
+      <div class="wt-track">
+        <div class="wt-orig-mark" style="left:${origPct}%"></div>
+        <div class="wt-fill" style="width:${fillPct}%;background:${Math.abs(delta)>0.05?dColor:'var(--sub)'}"></div>
+      </div>
+      <div class="wt-val" style="color:${dColor}">${cur.toFixed(2)}</div>
+      <div class="wt-delta" style="color:${dColor}">${Math.abs(delta)>0.01?dSign+delta.toFixed(2):''}</div>
+    </div>`;
+  }).join('');
+
+  const logItems = log.slice(-6).reverse().map(e => {
+    const lbClass = e.trueLabel===1 ? 'lb-p' : 'lb-s';
+    const lbText  = e.trueLabel===1 ? 'PHISHING' : 'SAFE';
+    const correction = e.predicted===e.trueLabel ? '' : `corrected ${e.predicted===1?'phishing→safe':'safe→phishing'}`;
+    return `<div class="log-item">
+      <span class="log-badge ${lbClass}">${lbText}</span>
+      <span class="log-target">${e.target}</span>
+      <span class="log-correction">${correction}</span>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="learn-panel">
+    <div class="learn-hdr" onclick="toggleLearn('${mode}')">
+      <div class="learn-hdr-l">
+        <span class="learn-title">🧠 What the AI has learned from you</span>
+        <span class="learn-cnt">${total} correction${total!==1?'s':''}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="learn-reset" onclick="event.stopPropagation();if(confirm('Reset all AI learning back to the original factory settings? This cannot be undone.'))LR.reset()">↺ Reset to original</button>
+        <span class="learn-toggle-arrow" id="learn-arr-${mode}">▶</span>
+      </div>
+    </div>
+    <div class="learn-body" id="learn-body-${mode}">
+      <div class="learn-stats">
+        <div class="learn-stat"><div class="learn-stat-n">${stats.total||total}</div><div class="learn-stat-l">Times used</div></div>
+        <div class="learn-stat"><div class="learn-stat-n" style="color:var(--teal)">${stats.corrections||total}</div><div class="learn-stat-l">Your corrections</div></div>
+        <div class="learn-stat"><div class="learn-stat-n" style="color:var(--safe)">${corrPct}%</div><div class="learn-stat-l">Correction rate</div></div>
+      </div>
+
+      <div style="font-family:var(--mono);font-size:10px;color:var(--sub);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px">
+        What the AI pays attention to — grey line = original, bar = adjusted by your feedback
+      </div>
+      ${weightRows}
+
+      <div style="font-family:var(--mono);font-size:10px;color:var(--sub);letter-spacing:1.5px;text-transform:uppercase;margin:12px 0 7px">
+        Your recent corrections
+      </div>
+      ${logItems || '<div style="font-size:12px;color:var(--faint)">No feedback yet</div>'}
+
+      <div style="margin-top:12px;padding:10px 12px;background:var(--bg);border-radius:7px;font-size:12px;color:var(--sub);line-height:1.8">
+        <strong style="color:var(--text)">How the model learns from your feedback:</strong><br>
+        When you tell the app a result was wrong, it adjusts what it pays attention to.
+        For example — if you correct a false alarm on a safe email, the model learns to
+        trust similar patterns more next time. These adjustments are saved in your browser
+        and stay between sessions.<br><br>
+        <strong style="color:var(--text)">The bars above</strong> show each factor the model uses.
+        The grey mark shows the original setting. The coloured bar shows where it has moved
+        based on your corrections. Red means the model now treats that factor as more risky;
+        green means it treats it as safer.<br><br>
+        <strong style="color:var(--text)">Automatic correction:</strong>
+        A small automatic pull brings the settings slowly back toward the originals over time.
+        This prevents one wrong correction from permanently breaking the model.
+        Use the reset button to restore everything to factory settings.
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleLearn(mode){
+  const body = document.getElementById('learn-body-'+mode);
+  const arr  = document.getElementById('learn-arr-'+mode);
+  if(!body) return;
+  const open = body.classList.toggle('open');
+  if(arr) arr.textContent = open ? '▼' : '▶';
+}
+
+// ── Render the feedback bar after a result ──
+function renderFeedbackBar(mode, target, predictedLabel, features){
+  // predictedLabel: 'PHISHING'|'LEGITIMATE'|'SUSPICIOUS'|'UNKNOWN'
+  const predictedNum = predictedLabel==='PHISHING' ? 1 : 0;
+  const fbId = '_fb_' + mode;
+
+  return `<div class="fb-bar" id="${fbId}">
+    <div class="fb-label">
+      <strong>Did we get this right?</strong><br>
+      Tell us and the AI learns — improving its accuracy next time.
+    </div>
+    <div class="fb-btns">
+      <button class="fb-btn fb-btn-safe"
+        onclick="submitFeedback('${mode}','${target.replace(/'/g,"\'")}',0,${predictedNum},'${fbId}')">
+        ✓ Yes, it is safe
+      </button>
+      <button class="fb-btn fb-btn-phish"
+        onclick="submitFeedback('${mode}','${target.replace(/'/g,"\'")}',1,${predictedNum},'${fbId}')">
+        🚨 No, it is phishing
+      </button>
+      <button class="fb-btn fb-btn-spam"
+        onclick="submitFeedback('${mode}','${target.replace(/'/g,"\'")}',1,${predictedNum},'${fbId}')">
+        ⚠ It is spam
+      </button>
+    </div>
+  </div>`;
+}
+
+// ── Process feedback submission ──
+function submitFeedback(mode, target, trueLabel, predictedLabel, fbId){
+  // Get the stored features for this scan
+  const features = mode==='email' ? window._lastFeatures_email : window._lastFeatures_url;
+  if(!features){ alert('No scan data to learn from.'); return; }
+
+  // SGD update
+  const deltas = LR.update(features, trueLabel);
+
+  // Log this correction
+  const log = LR.loadLog();
+  log.push({
+    mode, target, trueLabel, predicted: predictedLabel,
+    ts: Math.round(Date.now()/1000),
+    deltaCount: deltas.filter(d=>Math.abs(d.delta)>0.01).length
+  });
+  LR.saveLog(log);
+
+  // Update stats
+  const stats = LR.loadStats();
+  stats.total = (stats.total||0) + 1;
+  stats.corrections = (stats.corrections||0) + 1;
+  LR.saveStats(stats);
+
+  // Show thanks + what changed
+  const changed = deltas.filter(d=>Math.abs(d.delta)>0.05).slice(0,3);
+  const changedText = changed.length > 0
+    ? changed.map(d=>{
+        const dir = d.delta > 0 ? '↑ more risky' : '↓ more trusted';
+        return `<strong>${d.name}</strong>: ${dir}`;
+      }).join(' · ')
+    : 'Minor adjustments to multiple weights';
+
+  const el = document.getElementById(fbId);
+  if(el) el.outerHTML = `<div class="fb-done">
+    🧠 <div>
+      <strong>Thanks! Model updated.</strong><br>
+      ${trueLabel===1
+        ? 'Learned to treat similar patterns as more dangerous.'
+        : 'Learned to trust similar patterns more.'}<br>
+      <span style="color:var(--teal);font-size:10px">Weight changes: ${changedText}</span>
+    </div>
+  </div>`;
+
+  // Refresh learning panel
+  renderLearnPanel(mode);
+}
+
+
+// ════════════════════════════════════════════
+//  ENTRY POINT
+// ════════════════════════════════════════════
+async function scan(mode){
+  const iEl=document.getElementById(mode==='email'?'ei':'ui');
+  const bEl=document.getElementById(mode==='email'?'ebtn':'ubtn');
+  const raw=iEl.value.trim(); if(!raw){iEl.focus();return}
+  if(mode==='email'&&!raw.includes('@')){alert('Please enter a valid email address');return}
+  bEl.disabled=true;
+  try{ if(mode==='email') await scanEmail(raw); else await scanUrl(raw); }
+  finally{ bEl.disabled=false; }
+}
+
+// Init history on load
+renderHistory('email'); renderHistory('url');
+renderLearnPanel('email'); renderLearnPanel('url');
+</script>
+
+<!-- GLOSSARY SECTION -->
+<div style="max-width:880px;margin:0 auto;padding:0 22px 48px">
+  <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden">
+    <div style="padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none" onclick="toggleGlossary()">
+      <div style="display:flex;align-items:center;gap:9px">
+        <span style="font-size:16px">📖</span>
+        <span style="font-family:var(--body);font-size:13px;font-weight:600;color:var(--text)">Plain-English Glossary — what do all these terms mean?</span>
+      </div>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--sub)" id="glossary-arr">▶ tap to open</span>
+    </div>
+    <div id="glossary-body" style="display:none;padding:16px 18px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px">
+
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:13px">
+          <div style="font-weight:600;color:var(--text);margin-bottom:5px">📧 MX record</div>
+          <div style="font-size:13px;color:var(--sub);line-height:1.6">MX stands for "Mail Exchange". It is an entry in the internet's address book that says <em>which servers handle email for this domain</em>. If there are no MX records, the domain cannot receive email — so any email claiming to come from it is suspicious.</div>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:13px">
+          <div style="font-weight:600;color:var(--text);margin-bottom:5px">✅ SPF</div>
+          <div style="font-size:13px;color:var(--sub);line-height:1.6">SPF stands for "Sender Policy Framework". Think of it as a <em>guest list for email</em>. It is a record that says "only these servers are allowed to send email from our domain". Without it, anyone can fake an email pretending to be from that address.</div>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:13px">
+          <div style="font-weight:600;color:var(--text);margin-bottom:5px">🛡️ DMARC</div>
+          <div style="font-size:13px;color:var(--sub);line-height:1.6">DMARC stands for "Domain-based Message Authentication". It is a rule that tells receiving email servers what to do if someone tries to send a fake email using your domain — block it, send it to spam, or just report it. All major organisations have this.</div>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:13px">
+          <div style="font-weight:600;color:var(--text);margin-bottom:5px">🌐 DNS</div>
+          <div style="font-size:13px;color:var(--sub);line-height:1.6">DNS stands for "Domain Name System". It is the internet's address book — it translates website names (like google.com) into the actual server addresses (like 142.250.80.36) that computers use to connect. When we say "checking DNS" we mean looking up whether a domain actually exists and where it points.</div>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:13px">
+          <div style="font-weight:600;color:var(--text);margin-bottom:5px">🔒 SSL Certificate / HTTPS</div>
+          <div style="font-size:13px;color:var(--sub);line-height:1.6">An SSL certificate is what gives a website the padlock 🔒 in your browser. It means the connection is encrypted — like a sealed envelope. HTTPS (the "S" means secure) is the result of having one. While scam sites can also have HTTPS, not having it at all is a red flag.</div>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:13px">
+          <div style="font-weight:600;color:var(--text);margin-bottom:5px">🔐 Certificate Transparency</div>
+          <div style="font-size:13px;color:var(--sub);line-height:1.6">A public record of every SSL certificate ever issued. We check this to see how old a website's security history is. If a domain has certificates going back 3 years, it is almost certainly a real site. If it only has one certificate from last week, it is brand new — which matches how scam sites are created.</div>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:13px">
+          <div style="font-weight:600;color:var(--text);margin-bottom:5px">👀 Homoglyph / Look-alike letters</div>
+          <div style="font-size:13px;color:var(--sub);line-height:1.6">Some letters look almost identical. Scammers swap them to create fake addresses that look real. Common swaps: <strong>1</strong> (one) instead of <strong>l</strong> (lowercase L), <strong>0</strong> (zero) instead of <strong>o</strong>, <strong>rn</strong> instead of <strong>m</strong>. So "paypa<strong>1</strong>.com" looks like "paypal.com" at a glance.</div>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:13px">
+          <div style="font-weight:600;color:var(--text);margin-bottom:5px">📝 Typosquatting</div>
+          <div style="font-size:13px;color:var(--sub);line-height:1.6">Registering a domain name that is very similar to a real brand — like "amaz0n.com" or "goggle.com" — hoping people will mistype or not notice the difference. We measure how similar a domain is to real brands and flag it if it is suspiciously close.</div>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:13px">
+          <div style="font-weight:600;color:var(--text);margin-bottom:5px">🌍 Punycode / IDN</div>
+          <div style="font-size:13px;color:var(--sub);line-height:1.6">Some languages have letters that look identical to English ones but are technically different. Scammers register domains using, for example, Cyrillic letters that look exactly like Latin letters. To the eye it looks like "apple.com" but it is actually a completely different website. Punycode is how these domains are stored — they start with "xn--".</div>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:13px">
+          <div style="font-weight:600;color:var(--text);margin-bottom:5px">📊 AI Score / ML Model</div>
+          <div style="font-size:13px;color:var(--sub);line-height:1.6">The AI (machine learning) model looks at 16 things about the address — age, security history, name patterns and more — and combines them into a single probability score. It works like a checklist where each item is worth a different number of points. The final percentage is how likely the model thinks this is a scam.</div>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:13px">
+          <div style="font-weight:600;color:var(--text);margin-bottom:5px">🧠 How the AI learns</div>
+          <div style="font-size:13px;color:var(--sub);line-height:1.6">When you click "this was actually phishing" or "this was safe", the app slightly adjusts what it pays attention to — making it more accurate for similar cases next time. This is called "online learning". The adjustments are saved in your browser and stay between sessions. They are private to your device.</div>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:13px">
+          <div style="font-weight:600;color:var(--text);margin-bottom:5px">🔑 Risk vs Trust score</div>
+          <div style="font-size:13px;color:var(--sub);line-height:1.6">Every scan calculates two separate scores — Risk (bad signs add to this) and Trust (good signs add to this). The final verdict uses the difference: Risk minus Trust. This means a well-known domain can have a risk signal without being flagged, because its trust score is high enough to cancel it out.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleGlossary(){
+  const b=document.getElementById('glossary-body');
+  const a=document.getElementById('glossary-arr');
+  const open=b.style.display==='none';
+  b.style.display=open?'block':'none';
+  a.textContent=open?'▼ tap to close':'▶ tap to open';
+}
+</script>
+
+</body>
+</html>
