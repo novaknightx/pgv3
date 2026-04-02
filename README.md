@@ -1,157 +1,121 @@
-# 🛡️ PhishGuard — Phishing Detection Tool
-### No API keys required · Runs 100% locally
+# 🛡️ PhishGuard — Smart Phishing Detection Tool
+
+## 📌 Overview
+
+PhishGuard is a lightweight, browser-based tool designed to detect phishing emails and malicious URLs in real time. It works without requiring any API keys and performs analysis directly in the user’s browser, making it fast, private, and easy to use.
+
+The main goal of this project is to help users identify suspicious links and emails before they fall victim to cyber attacks.
 
 ---
 
-## What it does
+## 🚀 Features
 
-PhishGuard detects phishing emails and URLs using:
-
-- **15+ heuristic checks** (instant, no network needed)
-- **Levenshtein distance** — typosquatting & brand spoofing detection
-- **Homoglyph detection** — look-alike characters (paypa1 → paypal)
-- **RDAP/WHOIS lookup** — free public API, no key needed
-- **Google DNS over HTTPS** — free, no key needed
-- **Shannon entropy scoring** — detects auto-generated domains
-- **Disposable domain database** — 20+ known throwaway providers
+* Detects phishing emails and URLs instantly
+* Uses multiple heuristic checks for better accuracy
+* Identifies typosquatting (e.g., paypa1 instead of paypal)
+* Detects suspicious domains and fake structures
+* Works completely offline for basic analysis
+* No login or API key required
 
 ---
 
-## Files
+## 🧠 How It Works
+
+PhishGuard analyzes inputs using a combination of techniques:
+
+* **Heuristic Analysis** → Checks patterns commonly used in phishing
+* **String Similarity (Levenshtein Distance)** → Detects fake domains
+* **Entropy Calculation** → Identifies random or auto-generated domains
+* **DNS & Domain Checks** → Verifies domain validity
+* **Blacklist Matching** → Detects disposable or risky domains
+
+Each factor contributes to a risk score, which determines whether the input is:
+
+* Legitimate
+* Suspicious
+* Phishing
+
+---
+
+## 💻 Tech Stack
+
+* HTML, CSS, JavaScript (Frontend)
+* Python (optional local server)
+* Public APIs (DNS, RDAP)
+
+---
+
+## 📂 Project Structure
 
 ```
 phishguard/
-├── index.html    ← The app (open this in browser)
-├── server.py     ← Optional Python server (recommended)
-└── README.md     ← This file
+├── index.html      # Main application
+├── 404.html        # Error page
+├── _config.yml     # GitHub Pages config
+├── README.md       # Project documentation
+├── server.py       # Optional local server
 ```
 
 ---
 
-## How to Run
+## ▶️ How to Run
 
-### Option 1 — Simplest (just open the file)
-Double-click `index.html` or drag it into any browser.
-> ⚠ RDAP/DNS lookups may be blocked by CORS in some browsers with file:// URLs.
-> Use Option 2 for full functionality.
+### Option 1 — Directly in Browser
 
----
+Simply open `index.html` in any browser.
 
-### Option 2 — Python Server (Recommended ✅)
+### Option 2 — Using Local Server (Recommended)
 
-**Requirements:** Python 3 (comes pre-installed on Mac/Linux; download from python.org for Windows)
-
-**In Terminal (Mac/Linux):**
 ```bash
-# 1. Go to the phishguard folder
-cd path/to/phishguard
-
-# 2. Run the server
-python3 server.py
-
-# Browser opens automatically at http://localhost:8080
-```
-
-**In Terminal (Windows):**
-```cmd
-cd path\to\phishguard
 python server.py
 ```
 
-**To stop:** Press `Ctrl + C` in the terminal.
+Then open:
 
----
-
-### Option 3 — VS Code (Live Server Extension)
-
-1. Open VS Code
-2. Open the `phishguard` folder: **File → Open Folder**
-3. Install the **Live Server** extension:
-   - Click Extensions icon (or press `Ctrl+Shift+X`)
-   - Search: `Live Server`
-   - Install by **Ritwick Dey**
-4. Right-click `index.html` in the Explorer panel
-5. Select **"Open with Live Server"**
-6. App opens at `http://127.0.0.1:5500`
-
----
-
-### Option 4 — VS Code Terminal (built-in)
-
-1. Open VS Code
-2. Open the `phishguard` folder
-3. Open terminal: **Terminal → New Terminal** (or `` Ctrl+` ``)
-4. Run:
-   ```bash
-   python3 server.py
-   ```
-5. Open browser at `http://localhost:8080`
-
----
-
-### Option 5 — Node.js (if you have it)
-
-```bash
-cd path/to/phishguard
-npx serve .
-# Opens at http://localhost:3000
+```
+http://localhost:8080
 ```
 
 ---
 
-## Testing It
+## 🌐 Live Demo
 
-Try these examples to see it working:
+Once hosted on GitHub Pages:
 
-**Phishing email examples:**
-- `security-alert@paypa1-verify.xyz` (typosquatting)
-- `noreply@amazon-account-suspended.tk` (suspicious TLD)
-- `support@10minutemail.com` (disposable domain)
-
-**Phishing URL examples:**
-- `http://paypal.com.verify-account.xyz/login` (brand in subdomain)
-- `http://192.168.1.1/secure/login.php` (IP-based URL)
-- `https://paypa1.com/signin` (homoglyph: 1 instead of l)
-
-**Legitimate examples:**
-- `hello@github.com`
-- `https://www.google.com`
+```
+https://your-username.github.io/phishguard
+```
 
 ---
 
-## How the Scoring Works
+## 🎯 Purpose of the Project
 
-| Score | Verdict     |
-|-------|-------------|
-| 0–9   | LEGITIMATE  |
-| 10–29 | UNKNOWN     |
-| 30–59 | SUSPICIOUS  |
-| 60+   | PHISHING    |
-
-Risk factors are weighted:
-- IP-based URL: +35 points
-- Typosquatting detected: +30–35 points
-- Disposable email domain: +40 points
-- Suspicious TLD: +18–22 points
-- Domain < 30 days old: +20 points (from RDAP)
-- No MX records: +10 points (from DNS)
-- Homoglyph characters: +25–28 points
+This project was built to demonstrate practical implementation of cybersecurity concepts using simple web technologies. It focuses on real-world phishing detection techniques that are commonly used in modern security systems.
 
 ---
 
-## No Internet? Offline Mode
+## 🔐 Privacy
 
-The heuristic checks (brand spoofing, TLD check, structure analysis) work
-completely offline. RDAP and DNS lookups require internet but the tool
-still gives useful results without them.
+All analysis is performed locally in the browser. No personal data is stored or sent to external servers.
 
 ---
 
-## Privacy
+## 📌 Future Improvements
 
-All analysis happens locally in your browser. No data is sent to any
-third-party servers except:
-- `rdap.org` — domain registration lookup (no account needed)
-- `dns.google` — DNS resolution (Google's public DNS)
+* Machine learning-based detection model
+* Browser extension integration
+* Real-time threat intelligence APIs
+* Improved UI/UX and dashboard
 
-Neither service logs your queries in a personally identifiable way.
+---
+
+## 👤 Author
+
+Dude Aravind
+B.Tech AI & ML
+
+---
+
+## ⭐ Final Note
+
+PhishGuard is a simple but effective tool that shows how intelligent detection systems can be built without heavy infrastructure. It focuses on practical usability and real-world application rather than complexity.
