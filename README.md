@@ -83,7 +83,7 @@ http://localhost:8080
 Once hosted on GitHub Pages:
 
 ```
-https://your-username.github.io/phishguard
+https://novaknightx.github.io/pgv/
 ```
 
 ---
